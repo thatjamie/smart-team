@@ -7,7 +7,7 @@
 | Step | Status | Iteration | Last Commit |
 |------|--------|-----------|-------------|
 | Step 1: Extension Scaffold | ✅ Complete | 2/5 | fee4789 |
-| Step 2: AI Provider Abstraction | ⏳ Pending | - | - |
+| Step 2: AI Provider Abstraction | 🔄 In Progress | 1/5 | 871cd83 |
 | Step 3: System Prompts | ⏳ Pending | - | - |
 | Step 4: Shared Types | ⏳ Pending | - | - |
 | Step 5: Parsers | ⏳ Pending | - | - |
@@ -21,6 +21,6 @@
 | Step 13: Testing & Packaging | ⏳ Pending | - | - |
 
 ## Last Action
-- **Agent**: review-agent
-- **Action**: Step 1 APPROVED and marked ✅ Complete by user
-- **Timestamp**: 2026-04-14 21:23
+- **Agent**: dev-agent
+- **Action**: Committed Step 2, iteration 1 — awaiting review
+- **Timestamp**: 2026-04-14 21:31
