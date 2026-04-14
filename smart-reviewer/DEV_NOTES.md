@@ -1,4 +1,4 @@
-# Dev Notes — Step 2: AI Provider Abstraction
+# Dev Notes — Step 2: AI Provider Abstraction (Iteration 2)
 
 ## What was implemented
 - `AiProvider` interface with `chat()` and `stream()` methods
@@ -9,8 +9,8 @@
 
 ## Files changed
 - `src/ai/provider.ts` — Core interfaces: `AiMessage`, `AiResponse`, `AiChatOptions`, `AiProvider`
-- `src/ai/copilotProvider.ts` — VSCode LM API provider, model selection with Copilot vendor preference, system messages mapped to User role (VSCode LM limitation)
-- `src/ai/anthropicProvider.ts` — Anthropic SDK provider, system prompt extracted as separate parameter (Anthropic API requirement), streaming via `client.messages.stream()`
+- `src/ai/copilotProvider.ts` — VSCode LM API provider; fixed `modelOptions` instead of `maxTokens`, removed unavailable `usage`, made `convertMessages` synchronous
+- `src/ai/anthropicProvider.ts` — Anthropic SDK provider; fixed system message concatenation for multiple system messages
 - `src/ai/openaiProvider.ts` — OpenAI SDK provider, streaming via `stream: true`, usage captured from final chunk
 - `src/ai/providerFactory.ts` — Static factory, reads config, validates API keys from SecretStorage with helpful error messages
 
@@ -21,7 +21,13 @@
 - ProviderFactory uses static method pattern for simplicity — no need to instantiate the factory
 - API key storage keys in SecretStorage: `anthropicApiKey` and `openaiApiKey`
 - Error messages reference a "Set API Key" command that will be implemented when the chat handler is built (Step 10/12)
+- CopilotProvider returns `usage: undefined` since VSCode LM API doesn't expose token counts
+- CopilotProvider uses `modelOptions: { maxTokens }` per actual `LanguageModelChatRequestOptions` type
 
-## Questions for reviewer
-- CopilotProvider treats system messages as user messages. This is a VSCode LM API limitation. Is this acceptable, or should we prefix system messages with a "System:" label to help the model distinguish them?
-- The `_model` parameter in CopilotProvider's `convertMessages` is unused (kept for potential future model-specific message formatting). Is this okay?
+## Review feedback addressed (iteration 2)
+1. **BLOCKING — 8 TSC errors in CopilotProvider**: Fixed `maxTokens` → `modelOptions: { maxTokens }` (correct `LanguageModelChatRequestOptions` property). Removed `response.usage` access since `LanguageModelChatResponse` doesn't expose usage. Compilation now passes clean (0 errors).
+2. **Bug — Anthropic system message concatenation**: Fixed `convertMessages` to collect all system messages into `systemParts[]` and join with `\n\n` instead of overwriting. Multiple system messages are now properly concatenated.
+3. **Suggestion — async convertMessages**: Made `convertMessages` synchronous (removed `async`/`Promise` wrapper since it does no async work). Removed `_model` parameter as it was unused. Updated callers to remove `await`.
+
+## Review feedback respectfully disputed
+- None. All issues verified as correct and addressed. Compilation confirmed passing.

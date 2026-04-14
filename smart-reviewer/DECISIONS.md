@@ -51,3 +51,18 @@
   - **Context**: Need a way to create the right provider based on settings
   - **Rationale**: No state needs to be maintained in the factory — a static `create()` method is simpler than managing a factory instance.
   - **Date**: 2025-04-14
+
+- **Decision**: Return `usage: undefined` from CopilotProvider
+  - **Context**: Review feedback identified that `LanguageModelChatResponse` doesn't expose a `usage` property in the current VSCode API types (`@types/vscode@1.115.0`)
+  - **Rationale**: The VSCode LM API doesn't expose token counts. Since `AiResponse.usage` is optional, callers already handle `undefined`. If the API adds usage in the future, we can update the provider.
+  - **Date**: 2025-04-14
+
+- **Decision**: Use `modelOptions` instead of `maxTokens` in CopilotProvider
+  - **Context**: Review feedback identified 8 TSC errors — `maxTokens` is not a valid `LanguageModelChatRequestOptions` property
+  - **Rationale**: The correct API is `modelOptions: { maxTokens: N }` — a dictionary of model-specific options. Confirmed against actual type definitions.
+  - **Date**: 2025-04-14
+
+- **Decision**: Concatenate multiple system messages in AnthropicProvider
+  - **Context**: Review feedback identified that multiple system messages were silently overwritten (only last kept)
+  - **Rationale**: Anthropic's API accepts a single `system` string. When the messages array contains multiple system messages (e.g., role instructions + context), they should be joined with `\n\n` rather than discarding earlier ones.
+  - **Date**: 2025-04-14

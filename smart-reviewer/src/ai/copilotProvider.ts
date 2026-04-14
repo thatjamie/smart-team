@@ -8,9 +8,9 @@ import { AiProvider, AiMessage, AiResponse, AiChatOptions } from './provider';
 export class CopilotProvider implements AiProvider {
     async chat(messages: AiMessage[], options?: AiChatOptions): Promise<AiResponse> {
         const model = await this.selectModel();
-        const chatMessages = await this.convertMessages(messages, model);
+        const chatMessages = this.convertMessages(messages);
         const response = await model.sendRequest(chatMessages, {
-            maxTokens: options?.maxTokens,
+            modelOptions: { maxTokens: options?.maxTokens },
         });
 
         let text = '';
@@ -20,12 +20,8 @@ export class CopilotProvider implements AiProvider {
 
         return {
             text,
-            usage: response.usage
-                ? {
-                    inputTokens: response.usage.inputTokens ?? 0,
-                    outputTokens: response.usage.outputTokens ?? 0,
-                }
-                : undefined,
+            // VSCode LM API does not expose token usage
+            usage: undefined,
         };
     }
 
@@ -35,9 +31,9 @@ export class CopilotProvider implements AiProvider {
         options?: AiChatOptions
     ): Promise<AiResponse> {
         const model = await this.selectModel();
-        const chatMessages = await this.convertMessages(messages, model);
+        const chatMessages = this.convertMessages(messages);
         const response = await model.sendRequest(chatMessages, {
-            maxTokens: options?.maxTokens,
+            modelOptions: { maxTokens: options?.maxTokens },
         });
 
         let text = '';
@@ -48,12 +44,8 @@ export class CopilotProvider implements AiProvider {
 
         return {
             text,
-            usage: response.usage
-                ? {
-                    inputTokens: response.usage.inputTokens ?? 0,
-                    outputTokens: response.usage.outputTokens ?? 0,
-                }
-                : undefined,
+            // VSCode LM API does not expose token usage
+            usage: undefined,
         };
     }
 
@@ -82,11 +74,12 @@ export class CopilotProvider implements AiProvider {
 
     /**
      * Convert AiMessage[] to vscode.LanguageModelChatMessage[].
+     * System messages are mapped to User role since VSCode's LM API
+     * doesn't have a dedicated system role.
      */
-    private async convertMessages(
-        messages: AiMessage[],
-        _model: vscode.LanguageModelChat
-    ): Promise<vscode.LanguageModelChatMessage[]> {
+    private convertMessages(
+        messages: AiMessage[]
+    ): vscode.LanguageModelChatMessage[] {
         return messages.map((msg) => {
             switch (msg.role) {
                 case 'system':

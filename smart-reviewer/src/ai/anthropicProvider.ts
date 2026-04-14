@@ -77,12 +77,12 @@ export class AnthropicProvider implements AiProvider {
         systemPrompt: string | null;
         chatMessages: Anthropic.MessageParam[];
     } {
-        let systemPrompt: string | null = null;
+        const systemParts: string[] = [];
         const chatMessages: Anthropic.MessageParam[] = [];
 
         for (const msg of messages) {
             if (msg.role === 'system') {
-                systemPrompt = msg.content;
+                systemParts.push(msg.content);
             } else {
                 chatMessages.push({
                     role: msg.role,
@@ -91,6 +91,7 @@ export class AnthropicProvider implements AiProvider {
             }
         }
 
+        const systemPrompt = systemParts.length > 0 ? systemParts.join('\n\n') : null;
         return { systemPrompt, chatMessages };
     }
 }
