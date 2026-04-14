@@ -66,3 +66,24 @@
   - **Context**: Review feedback identified that multiple system messages were silently overwritten (only last kept)
   - **Rationale**: Anthropic's API accepts a single `system` string. When the messages array contains multiple system messages (e.g., role instructions + context), they should be joined with `\n\n` rather than discarding earlier ones.
   - **Date**: 2025-04-14
+
+## Step 3: System Prompts
+- **Decision**: Use XML-style tags to delimit dynamic context sections
+  - **Context**: System prompt injects large blocks of dynamic content (PLAN.md, diff, etc.) alongside instructions
+  - **Rationale**: XML tags like `<progress>`, `<dev-notes>`, `<diff>` help the AI distinguish injected content from prompt instructions. This is a common prompting best practice that improves accuracy.
+  - **Date**: 2025-04-14
+
+- **Decision**: Make `planFull` optional in ReviewPromptContext
+  - **Context**: Full PLAN.md could be very large and bloat the prompt
+  - **Rationale**: Most reviews only need the current step's requirements. The full plan is optional for cases where cross-step context matters (e.g., checking if a decision in Step 1 affects Step 5). The caller decides whether to include it.
+  - **Date**: 2025-04-14
+
+- **Decision**: Default test/lint results to "No results available" messages
+  - **Context**: Test and lint results are optional — they may not be available for every review
+  - **Rationale**: Always including these sections ensures the AI knows the categories exist and doesn't wonder whether it missed something. Explicit "not available" is better than absent section.
+  - **Date**: 2025-04-14
+
+- **Decision**: Explicitly mirror review-agent skill's REVIEW_FEEDBACK.md format
+  - **Context**: The AI needs to produce output compatible with the dev-agent's feedback parsing
+  - **Rationale**: Using the exact same format (Summary, ✅ Approved Items, ❌ Changes Required, 💡 Suggestions, ❓ Questions, Iteration, Status) ensures compatibility across the dev-agent/review-agent workflow.
+  - **Date**: 2025-04-14
