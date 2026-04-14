@@ -1,4 +1,4 @@
-# Dev Notes — Step 1: Extension Scaffold
+# Dev Notes — Step 1: Extension Scaffold (Iteration 2)
 
 ## What was implemented
 - Complete VSCode extension scaffold for Smart Reviewer
@@ -10,20 +10,24 @@
 - `media/icon.svg` — eye/review icon (Feather Icons style)
 
 ## Files changed
-- `smart-reviewer/package.json` — Full extension manifest with all contributions from the plan
+- `smart-reviewer/package.json` — Full extension manifest with all contributions from the plan; removed API key settings (security)
 - `smart-reviewer/tsconfig.json` — TypeScript config (ES2022, commonjs, strict mode)
-- `smart-reviewer/.vscodeignore` — Packaging exclusions
+- `smart-reviewer/.vscodeignore` — Simplified packaging exclusions (removed conflicting rules)
 - `smart-reviewer/.gitignore` — Git ignores for out/, node_modules/, *.vsix
-- `smart-reviewer/src/extension.ts` — Entry point with activate/deactivate, chat participant registration, command stubs
+- `smart-reviewer/src/extension.ts` — Entry point with activate/deactivate, chat participant registration, command stubs; removed TreeDataProvider stub and unused secretStorage variable
 - `smart-reviewer/media/icon.svg` — Eye icon for activity bar
 
 ## Decisions made
 - Used `onStartupFinished` as activation event so the extension loads automatically without requiring a specific file type
 - All 8 commands registered as stubs (show info messages) — full implementations are in later steps
 - Chat participant registered with `/review` and `/status` sub-commands per plan
-- `secretStorage` variable is initialized but API key storage logic deferred to Step 2 (AI providers)
 - Tree view sidebar registered in package.json contributes but data provider implementation deferred to Step 8
 
-## Questions for reviewer
-- Should the `.vscodeignore` also exclude test files? Currently tests aren't in scope for Step 1.
-- Is the `secretStorage` reference in activate() acceptable even though it's unused? It's a placeholder for Step 2.
+## Review feedback addressed (iteration 2)
+1. **BLOCKING — TreeDataProvider compilation error**: Removed `new vscode.TreeDataProvider<vscode.TreeItem>() as any` line. `TreeDataProvider` is an interface and cannot be instantiated. TreeView provider will be properly implemented in Step 8.
+2. **`.vscodeignore` conflicting rules**: Simplified to clean rules — `src/**` excludes source, `**/*.map` excludes source maps, `!media/**` ensures icon is included. Removed the contradictory `!src/extension.ts` and `**/*.ts` pair.
+3. **API keys as plaintext settings**: Removed `smart-reviewer.anthropicApiKey` and `smart-reviewer.openaiApiKey` from `contributes.configuration`. API keys will be managed exclusively via `context.secrets` (SecretStorage) when AI providers are implemented in Step 2.
+4. **Unused `secretStorage` variable**: Removed the unused `const secretStorage = context.secrets;` line. Will be re-introduced in Step 2 when AI providers actually need it.
+
+## Review feedback respectfully disputed
+- None. All four blocking issues were verified as correct and have been addressed.

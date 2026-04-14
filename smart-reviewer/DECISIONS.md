@@ -20,3 +20,13 @@
   - **Context**: Plan specified VSCode extension
   - **Rationale**: API types should match the minimum engine version to avoid using APIs not available in the target version
   - **Date**: 2025-04-14
+
+- **Decision**: Remove API key settings from contributes.configuration, use SecretStorage only
+  - **Context**: Review feedback identified that API keys in contributes.configuration are stored in plaintext settings.json
+  - **Rationale**: Plan explicitly says "secret, use vscode.SecretStorage". SecretStorage encrypts keys and keeps them out of settings.json. API keys will be set via a command/UI flow in Step 2.
+  - **Date**: 2025-04-14
+
+- **Decision**: Simplify .vscodeignore to avoid conflicting negation patterns
+  - **Context**: Review feedback identified that `**/*.ts` undid the `!src/extension.ts` negation
+  - **Rationale**: Since `npm run compile` outputs to `out/` (which is not excluded), compiled JS will be packaged. No need to include source files. Clean rules: exclude src, maps, node_modules, dev configs, and markdown; explicitly include media/.
+  - **Date**: 2025-04-14

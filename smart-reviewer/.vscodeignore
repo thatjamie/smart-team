@@ -1,11 +1,9 @@
 .vscode/**
 .vscode-test/**
 src/**
-!src/extension.ts
-**/*.ts
 **/*.map
 node_modules/**
 .gitignore
 tsconfig.json
 **/*.md
-!media/icon.svg
+!media/**

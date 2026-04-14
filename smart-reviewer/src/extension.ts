@@ -7,9 +7,6 @@ import * as vscode from 'vscode';
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     console.log('Smart Reviewer extension is activating...');
 
-    // Secret storage for API keys
-    const secretStorage = context.secrets;
-
     // Register chat participant
     const chatParticipant = vscode.chat.createChatParticipant(
         'smart-reviewer',
@@ -51,10 +48,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     for (const [commandId, handler] of commands) {
         context.subscriptions.push(vscode.commands.registerCommand(commandId, handler));
     }
-
-    // Register sidebar tree view (stub — will be implemented in Step 8)
-    const treeDataProvider = new vscode.TreeDataProvider<vscode.TreeItem>() as any;
-    // Placeholder until Step 8 implements the full ReviewTreeProvider
 
     console.log('Smart Reviewer extension activated successfully.');
 }

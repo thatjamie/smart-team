@@ -108,29 +108,17 @@
           "description": "AI provider for code review analysis",
           "order": 1
         },
-        "smart-reviewer.anthropicApiKey": {
-          "type": "string",
-          "default": "",
-          "description": "Anthropic API key (stored securely via SecretStorage)",
-          "order": 2
-        },
-        "smart-reviewer.openaiApiKey": {
-          "type": "string",
-          "default": "",
-          "description": "OpenAI API key (stored securely via SecretStorage)",
-          "order": 3
-        },
         "smart-reviewer.anthropicModel": {
           "type": "string",
           "default": "claude-sonnet-4-20250514",
           "description": "Anthropic model to use for reviews",
-          "order": 4
+          "order": 2
         },
         "smart-reviewer.openaiModel": {
           "type": "string",
           "default": "gpt-4o",
           "description": "OpenAI model to use for reviews",
-          "order": 5
+          "order": 3
         }
       }
     }
