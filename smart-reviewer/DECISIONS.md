@@ -109,3 +109,24 @@
   - **Context**: Need to track which blocking issues have been addressed across review iterations
   - **Rationale**: The `resolved` field allows the tree view to show issue counts and the chat handler to summarize outstanding vs resolved items.
   - **Date**: 2025-04-14
+
+## Step 5: Parsers
+- **Decision**: Use regex-based parsing instead of markdown AST library
+  - **Context**: Need to parse structured markdown files (PLAN.md, PROGRESS.md, DEV_NOTES.md, etc.)
+  - **Rationale**: The markdown formats are simple and well-defined by our own conventions. Adding a markdown AST library (like marked, remark) would add a dependency for minimal benefit. Regex parsing is sufficient and keeps the extension lightweight.
+  - **Date**: 2025-04-14
+
+- **Decision**: Graceful degradation — return undefined/empty on missing or malformed files
+  - **Context**: Parsers may be called before all workflow files exist
+  - **Rationale**: The extension should work even when only some shared state files are present (e.g., PROGRESS.md exists but REVIEW_FEEDBACK.md doesn't). Callers check for undefined rather than handling exceptions.
+  - **Date**: 2025-04-14
+
+- **Decision**: Define `DevNotes` and `Decision` interfaces in their respective parser files, not types.ts
+  - **Context**: These types are parser-specific output formats, not cross-cutting shared types
+  - **Rationale**: `types.ts` contains the canonical data model shared across the whole extension. Parser-specific result types stay co-located with their parsers for discoverability and to avoid bloating types.ts.
+  - **Date**: 2025-04-14
+
+- **Decision**: `parsePlan` accepts optional `progressOverrides` Map parameter
+  - **Context**: Step statuses come from PROGRESS.md, not PLAN.md itself
+  - **Rationale**: The caller reads PROGRESS.md first, then passes status overrides to `parsePlan`. This keeps the plan parser focused on markdown structure while allowing status enrichment.
+  - **Date**: 2025-04-14
