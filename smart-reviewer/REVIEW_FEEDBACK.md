@@ -1,29 +1,31 @@
-# Review Feedback — Step 4: Shared Types
+# Review Feedback — Step 5: Parsers
 
 ## Summary
-Clean, complete type definition file that matches every interface and enum from the plan exactly. All types are well-documented with JSDoc, compile cleanly, and are ready for consumption by Steps 5-12. **No blocking issues.**
+Five well-structured parsers covering all shared state markdown files. All return types from `types.ts`, graceful degradation on missing files, and regex-based parsing that's lightweight and appropriate for the well-defined formats. Code compiles and packages cleanly. **No blocking issues.**
 
 ## ✅ Approved Items
-- **File location**: `src/types.ts` — matches plan exactly ✅
-- **`StepStatus` enum**: `Pending`, `InProgress`, `Complete` with string values — matches plan ✅
-- **`Step` interface**: All 7 fields — `index`, `title`, `level`, `content`, `status`, `iteration`, `lastCommit` ✅
-- **`Plan` interface**: `name`, `filePath`, `steps[]` ✅
-- **`Progress` interface**: `planName`, `branch`, `created`, `steps[]`, `lastAction` ✅
-- **`ProgressStepEntry`**: `label`, `status`, `iteration`, `lastCommit` ✅
-- **`ProgressLastAction`**: `agent`, `action`, `timestamp` ✅
-- **`WorktreeInfo`**: `path`, `branch`, `exists` ✅
-- **`ReviewFeedback` interface**: All 9 fields — `stepIndex`, `stepTitle`, `summary`, `approvedItems[]`, `changesRequired[]`, `suggestions[]`, `questions[]`, `iteration`, `status` ✅
-- **`ChangesRequiredItem`**: `description`, `howToFix`, `resolved` ✅
-- **JSDoc documentation**: All types and fields documented for IntelliSense ✅
-- **Section organization**: Clear visual separation with comment headers ✅
-- **DECISIONS.md**: 4 decisions logged (enum vs union, zero-based index, status as string union, resolved field) ✅
+- **`src/parsers/planParser.ts`**: `parsePlan()` returns `Plan` with `progressOverrides` merging, `findPlanFile()` searches root + monorepo subdirs ✅
+- **`src/parsers/progressParser.ts`**: `parseProgress()` parses metadata, step table with emoji status, iteration counts, and Last Action section ✅
+- **`src/parsers/devNotesParser.ts`**: `parseDevNotes()` extracts all 6 sections (implemented, files, decisions, questions, feedback addressed, disputes) ✅
+- **`src/parsers/reviewFeedbackParser.ts`**: `parseReviewFeedback()` extracts step info, summary, approved/required/suggestions/questions, iteration, APPROVED/CHANGES_REQUIRED status ✅
+- **`src/parsers/decisionsParser.ts`**: `parseDecisions()` extracts step-scoped decisions with context, rationale, date using look-ahead ✅
+- **Return types use `types.ts` interfaces**: `Plan`, `Progress`, `ReviewFeedback`, `ChangesRequiredItem`, `StepStatus` ✅
+- **Graceful degradation**: All parsers return `undefined` or `[]` on missing/malformed files ✅
+- **`Decision` and `DevNotes` interfaces** co-located with their parsers — reasonable scoping decision ✅
+- **Emoji status parsing**: ✅/🔄/⏳ correctly mapped to `StepStatus` enum ✅
+- **Iteration parsing**: `"2/5"` → `2`, `"-"` → `0` ✅
+- **Changes Required parsing**: Extracts bold title + description, checkbox pattern supported ✅
+- **JSDoc documentation**: All public functions documented ✅
+- **DECISIONS.md**: 4 decisions logged ✅
 - **DEV_NOTES.md**: Complete and accurate ✅
 
 ## ❌ Changes Required
 None.
 
 ## 💡 Suggestions (Optional)
-- None. This is a straightforward type definition file that matches the plan spec exactly.
+- Regarding the developer's question about `extractStatus` defaulting to `CHANGES_REQUIRED`: The current default is correct. If a REVIEW_FEEDBACK.md exists but the status can't be parsed, treating it as requiring changes is the safer assumption — it prevents accidentally finalizing an incomplete review. Keep it as-is.
+
+- Regarding stricter validation: The current graceful degradation approach is the right call. These parsers run at extension activation time and in the sidebar — throwing on malformed files would break the UI. Partial data is better than no data.
 
 ## ❓ Questions
 None.
@@ -32,7 +34,7 @@ None.
 | Check | Result |
 |-------|--------|
 | `npx tsc` (compile) | ✅ Clean — 0 errors |
-| `npx vsce package` | ✅ `smart-reviewer-0.1.0.vsix` (20 files, 17.97KB) |
+| `npx vsce package` | ✅ `smart-reviewer-0.1.0.vsix` (30 files, 30.39KB) |
 
 ## Iteration
 - Iteration: 1/5
