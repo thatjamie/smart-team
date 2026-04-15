@@ -1,25 +1,28 @@
-# Dev Notes — Step 3: System Prompts
+# Dev Notes — Step 4: Shared Types
 
 ## What was implemented
-- `ReviewPromptContext` interface — defines all context needed for the review prompt
-- `buildReviewSystemPrompt(context)` function — assembles a complete system prompt dynamically with:
-  - Role definition (review-agent identity and core rules)
-  - Review criteria (7 priority-ordered checks)
-  - Output format specification (exact REVIEW_FEEDBACK.md structure)
-  - Dynamic context injection (PLAN.md step, PROGRESS.md, DEV_NOTES.md, DECISIONS.md, git diff, test/lint results)
-  - Final instruction to guide the AI's review process
+- `src/types.ts` — All shared type definitions used across the extension (149 lines):
+  - `StepStatus` enum: `pending`, `in-progress`, `complete`
+  - `Step` interface: index, title, level, content, status, iteration, lastCommit
+  - `Plan` interface: name, filePath, steps[]
+  - `ProgressStepEntry`: label, status, iteration, lastCommit
+  - `ProgressLastAction`: agent, action, timestamp
+  - `Progress`: planName, branch, created, steps[], lastAction
+  - `WorktreeInfo`: path, branch, exists
+  - `ChangesRequiredItem`: description, howToFix, resolved
+  - `ReviewFeedback`: stepIndex, stepTitle, summary, approvedItems[], changesRequired[], suggestions[], questions[], iteration, status
 
 ## Files changed
-- `src/prompts/reviewSystemPrompt.ts` — New file. Exports `ReviewPromptContext` interface and `buildReviewSystemPrompt()` function (191 lines)
+- `src/types.ts` — New file with all shared types (149 lines)
 
 ## Decisions made
-- Used XML-style tags (`<plan-full>`, `<progress>`, `<dev-notes>`, etc.) to delimit dynamic context sections — helps the AI distinguish between prompt instructions and injected content
-- `planFull` is optional — only included if the caller provides it, to avoid bloating the prompt when cross-step context isn't needed
-- Test and lint results default to "No results available" messages when not provided, ensuring the AI always knows these categories exist
-- Review criteria are numbered and prioritized — plan requirements come first, code quality later
-- The prompt explicitly mirrors the review-agent skill's conventions (same REVIEW_FEEDBACK.md format, same iteration rules, same approval workflow)
-- Output format includes instructions that the AI must never mark ✅ Complete — only the human user can finalize
+- Used `enum` for `StepStatus` instead of string union — enables switch exhaustiveness checking and IDE autocomplete
+- `Step.index` is zero-based to match array indices throughout the codebase
+- `Step.level` captures heading depth (2 for `##`, 3 for `###`) to support hierarchical plans
+- `ReviewFeedback.status` uses string union `'APPROVED' | 'CHANGES_REQUIRED'` instead of enum — only two values, and they appear as literal strings in the markdown
+- `ChangesRequiredItem` includes a `resolved` boolean for tracking issue resolution across iterations
+- `WorktreeInfo.exists` allows callers to check worktree availability without throwing
+- All types are JSDoc-documented for IntelliSense support
 
 ## Questions for reviewer
-- Should the system prompt include token budget guidance (e.g., "keep your response under 4000 tokens")? Currently the AI's response length is controlled by `maxTokens` in the provider options, but explicit guidance in the prompt might help.
-- The `planFull` field is optional to keep prompt size manageable. Is it worth always including the full plan, or is the current step section sufficient for most reviews?
+- None. This step is a straightforward type definition file matching the plan spec exactly.

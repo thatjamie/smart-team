@@ -87,3 +87,25 @@
   - **Context**: The AI needs to produce output compatible with the dev-agent's feedback parsing
   - **Rationale**: Using the exact same format (Summary, ✅ Approved Items, ❌ Changes Required, 💡 Suggestions, ❓ Questions, Iteration, Status) ensures compatibility across the dev-agent/review-agent workflow.
   - **Date**: 2025-04-14
+
+## Step 4: Shared Types
+- **Decision**: Use `enum` for `StepStatus` instead of string union
+  - **Context**: Need to represent step status (pending, in-progress, complete) across parsers, writers, and tree view
+  - **Rationale**: Enum enables switch exhaustiveness checking and IDE autocomplete. String unions are fine for two-value types but `StepStatus` has three values and may grow.
+  - **Date**: 2025-04-14
+
+- **Decision**: Zero-based `Step.index` matching array indices
+  - **Context**: Steps need a numeric index for reference
+  - **Rationale**: Zero-based indices match JavaScript array access patterns used in parsers and tree view. Display can add 1 for user-facing labels.
+  - **Date**: 2025-04-14
+
+- **Decision**: `ReviewFeedback.status` as string union, not enum
+  - **Context**: Status is either APPROVED or CHANGES_REQUIRED
+  - **Context**: Only two values that appear as literal strings in REVIEW_FEEDBACK.md markdown
+  - **Rationale**: String union is simpler for a two-value type and matches the literal text parsed from markdown files.
+  - **Date**: 2025-04-14
+
+- **Decision**: `ChangesRequiredItem` includes `resolved` boolean
+  - **Context**: Need to track which blocking issues have been addressed across review iterations
+  - **Rationale**: The `resolved` field allows the tree view to show issue counts and the chat handler to summarize outstanding vs resolved items.
+  - **Date**: 2025-04-14
