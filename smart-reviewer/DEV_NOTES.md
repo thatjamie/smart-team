@@ -1,30 +1,29 @@
-# Dev Notes — Step 5: Parsers
+# Dev Notes — Step 6: Git Operations
 
 ## What was implemented
-- `src/parsers/planParser.ts` — Parse PLAN.md into structured Plan/Step objects; find PLAN.md in workspace or monorepo subdirectories
-- `src/parsers/progressParser.ts` — Parse PROGRESS.md: metadata, step table with emoji status, iteration counts, Last Action section
-- `src/parsers/devNotesParser.ts` — Parse DEV_NOTES.md: extract sections (what implemented, files changed, decisions, questions, feedback addressed, disputes)
-- `src/parsers/reviewFeedbackParser.ts` — Parse REVIEW_FEEDBACK.md: extract step info, summary, approved/required/suggestions/questions, iteration, APPROVED/CHANGES_REQUIRED status
-- `src/parsers/decisionsParser.ts` — Parse DECISIONS.md: extract decision entries with step, context, rationale, date
-- `Decision` interface exported from decisionsParser.ts
+- `src/git.ts` — Read-only git operations module (192 lines):
+  - `getProjectRoot(dir)` — find git toplevel via `git rev-parse --show-toplevel`
+  - `getProjectName(projectRoot)` — basename of project root
+  - `findDevWorktree(projectRoot)` — locate `../<name>-dev/` worktree per dev-agent convention
+  - `getDiff(dir, base?)` — full diff against base branch (auto-detects main/master)
+  - `getLatestDiff(dir)` — diff of HEAD~1 vs HEAD (for iteration reviews)
+  - `guessBaseBranch(dir)` — detect main or master
+  - `getCurrentBranch(dir)` — current branch name
+  - `getLatestCommit(dir)` — short commit hash
+- All operations are strictly read-only — reviewer never creates worktrees, commits, or modifies code
 
 ## Files changed
-- `src/parsers/planParser.ts` — New file (121 lines). Exports `parsePlan()` and `findPlanFile()`
-- `src/parsers/progressParser.ts` — New file (169 lines). Exports `parseProgress()`
-- `src/parsers/devNotesParser.ts` — New file (111 lines). Exports `parseDevNotes()` and `DevNotes` interface
-- `src/parsers/reviewFeedbackParser.ts` — New file (186 lines). Exports `parseReviewFeedback()`
-- `src/parsers/decisionsParser.ts` — New file (105 lines). Exports `parseDecisions()` and `Decision` interface
+- `src/git.ts` — New file (192 lines). Exports 7 functions.
 
 ## Decisions made
-- All parsers return `undefined` or empty array when files don't exist (graceful degradation)
-- Parsers use regex-based markdown parsing rather than a markdown AST library — lighter weight, no extra dependencies
-- `DevNotes` interface defined in `devNotesParser.ts` (not in `types.ts`) since it's only used by the parser and its consumers
-- `Decision` interface defined in `decisionsParser.ts` for the same reason
-- `parsePlan` accepts optional `progressOverrides` Map to merge PROGRESS.md statuses into steps
-- Step index from REVIEW_FEEDBACK.md heading is converted to zero-based
-- `parseStatusEmoji` handles ✅/🔄/⏳ emojis to StepStatus enum mapping
-- JSDoc comments avoid backticks and `*/` sequences to prevent TS compilation errors
+- Used `spawnSync` with 30s timeout and 10MB maxBuffer for large diffs
+- All functions return empty string or undefined on error — never throw to callers
+- `findDevWorktree` follows dev-agent convention: `../<projectName>-dev/`
+- `guessBaseBranch` tries `main` first, then `master`, defaults to `main`
+- `getDiff` falls back from `diff main...HEAD` to `diff main HEAD` if triple-dot fails
+- Avoided backticks in JSDoc comments and template literals to prevent TS compilation issues with the current tsconfig target
+- Added `getCurrentBranch` and `getLatestCommit` helpers beyond plan spec — useful for tree view and context builder
 
 ## Questions for reviewer
-- Should parsers validate the parsed data more strictly (e.g., throw on malformed PROGRESS.md)? Currently they gracefully return partial results.
-- `extractStatus` defaults to `CHANGES_REQUIRED` if neither APPROVED nor CHANGES_REQUIRED is found — is this the right default?
+- `getDiff` tries triple-dot first (shows changes on current branch only), then falls back to double-dot. Is the fallback appropriate, or should we just fail?
+- Is 10MB maxBuffer sufficient for large diffs? Alternative: use streaming for very large repos.

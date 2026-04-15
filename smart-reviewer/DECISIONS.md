@@ -130,3 +130,24 @@
   - **Context**: Step statuses come from PROGRESS.md, not PLAN.md itself
   - **Rationale**: The caller reads PROGRESS.md first, then passes status overrides to `parsePlan`. This keeps the plan parser focused on markdown structure while allowing status enrichment.
   - **Date**: 2025-04-14
+
+## Step 6: Git Operations
+- **Decision**: Use `spawnSync` instead of `exec` or `execFile`
+  - **Context**: Need to run git commands and capture output
+  - **Rationale**: `spawnSync` gives control over timeout (30s) and maxBuffer (10MB for large diffs). It also avoids shell injection risks since args are passed as an array.
+  - **Date**: 2025-04-14
+
+- **Decision**: All git functions return empty/undefined on error, never throw
+  - **Context**: Git operations may fail for various reasons (not a git repo, no commits, etc.)
+  - **Rationale**: The extension should degrade gracefully. A failed git command shouldn't crash the review flow. Callers can check for empty results.
+  - **Date**: 2025-04-14
+
+- **Decision**: Only read-only operations — no worktree creation, commits, or code modification
+  - **Context**: Plan explicitly states "Reviewer does NOT: create worktrees, commit, or modify code"
+  - **Rationale**: The reviewer is a passive observer. All git operations are queries (diff, branch, rev-parse). This is a safety guarantee.
+  - **Date**: 2025-04-14
+
+- **Decision**: Avoid backticks entirely in git.ts
+  - **Context**: TS compilation errors with backticks inside JSDoc comments and some template literal contexts
+  - **Rationale**: The ES2022/commonjs target with the current TypeScript version has parsing issues with backticks in certain JSDoc positions. Using string concatenation is safer and compiles cleanly.
+  - **Date**: 2025-04-14
