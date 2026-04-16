@@ -1,29 +1,20 @@
-# Dev Notes — Step 8: Sidebar TreeView
+# Dev Notes — Step 9: Diff Viewer
 
 ## What was implemented
-- `src/providers/reviewTreeProvider.ts` — Full sidebar TreeView provider (415 lines):
-  - `ReviewTreeItem` class extending `vscode.TreeItem` with custom itemType and filePath/stepIndex
-  - `ReviewTreeProvider` implementing `vscode.TreeDataProvider<ReviewTreeItem>`
-  - Root items: Plan info, Worktree info, Current Step, Review Files, All Steps
-  - File items are clickable (open in editor via vscode.open command)
-  - Step items are clickable (open PLAN.md)
-  - Uses `refresh()` and `setPlanRoot()` for manual updates
-  - Integrates all parsers (plan, progress, devNotes, reviewFeedback, decisions) and git operations
+- `src/diffViewer.ts` — Diff retrieval and display module (39 lines):
+  - `getDiffForStep(worktreeDir, iteration)` — returns full diff for iteration 1, latest commit diff for iteration 2+
+  - `openDiffEditor(diffContent, title?)` — opens diff in a new editor tab with syntax highlighting
 
 ## Files changed
-- `src/providers/reviewTreeProvider.ts` — New file (415 lines). Exports `ReviewTreeItem` and `ReviewTreeProvider`
+- `src/diffViewer.ts` — New file (39 lines). Exports `getDiffForStep()` and `openDiffEditor()`
 
 ## Decisions made
-- Tree structure has 5 root sections: Plan, Worktree, Current Step, Review Files, All Steps
-- Icons use `vscode.ThemeIcon` with semantic colors (charts.green for complete, charts.blue for in-progress, errorForeground for issues)
-- File items use `vscode.open` command to open files directly in editor
-- Step items also use `vscode.open` to jump to PLAN.md
-- REVIEW_FEEDBACK.md item gets `step-issues` icon type when CHANGES_REQUIRED (red error icon)
-- `sync~spin` icon for in-progress steps provides visual animation
-- `buildProgressOverrides()` helper maps Progress data into the format `parsePlan` expects
-- Data is re-parsed on every `getChildren` call (no caching) for simplicity — tree is small and refreshes are user-triggered
-- Graceful fallbacks: "No plan found" message when workspace lacks PLAN.md, "not found" for missing files
+- `getDiffForStep` delegates to existing `getDiff()` and `getLatestDiff()` from git.ts — no duplicated git logic
+- Iteration threshold is `<= 1` for full diff, `> 1` for latest commit only — matches review-agent convention
+- `openDiffEditor` uses `vscode.workspace.openTextDocument` with `language: 'diff'` for syntax highlighting
+- Opens in `ViewColumn.Beside` so user can see diff alongside the chat or other editors
+- `preview: false` keeps the tab persistent (not replaced when next diff opens)
+- Title parameter is unused (VSCode untitled docs don't support custom titles) but kept for API clarity
 
 ## Questions for reviewer
-- Should the tree provider cache parsed data and only refresh on file watcher events? Currently it re-parses on every expand, which is simple but could be slow for very large plans.
-- The `buildProgressOverrides` uses `indexOf` which is O(n) — fine for small step counts but could use a direct index if ProgressStepEntry included stepIndex.
+- The `title` parameter in `openDiffEditor` isn't actually used for the tab name (untitled docs can't be named). Should we remove it, or keep it for potential future use with virtual documents?

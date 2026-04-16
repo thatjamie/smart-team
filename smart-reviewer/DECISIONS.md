@@ -188,3 +188,14 @@
   - **Context**: Need icons for different item types (plan, file, step status)
   - **Rationale**: ThemeIcons are built into VSCode, work across all themes, and support semantic color tokens (charts.green, charts.blue, errorForeground). No custom icon files needed.
   - **Date**: 2025-04-14
+
+## Step 9: Diff Viewer
+- **Decision**: Delegate to git.ts functions instead of reimplementing git commands
+  - **Context**: Need `getDiff` for full diff and `getLatestDiff` for iteration diffs
+  - **Rationale**: git.ts already has the correct git invocations with error handling, fallbacks, and base branch detection. No need to duplicate that logic.
+  - **Date**: 2025-04-14
+
+- **Decision**: Use untitled document with language 'diff' for diff display
+  - **Context**: Need to show diff output with syntax highlighting
+  - **Rationale**: `vscode.workspace.openTextDocument({ language: 'diff' })` is the simplest approach. It provides syntax highlighting without needing custom editors or virtual documents. Opens in `ViewColumn.Beside` for side-by-side viewing.
+  - **Date**: 2025-04-14
