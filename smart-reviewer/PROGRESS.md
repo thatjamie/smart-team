@@ -13,7 +13,7 @@
 | Step 5: Parsers | ✅ Complete | 1/5 | 359071b |
 | Step 6: Git Operations | ✅ Complete | 1/5 | 2044444 |
 | Step 7: Markdown File Writers | ✅ Complete | 1/5 | a2ad7a5 |
-| Step 8: Sidebar TreeView | ⏳ Pending | - | - |
+| Step 8: Sidebar TreeView | 🔄 In Progress | 1/5 | 2aca4cc |
 | Step 9: Diff Viewer | ⏳ Pending | - | - |
 | Step 10: Chat Handler | ⏳ Pending | - | - |
 | Step 11: Context Builder | ⏳ Pending | - | - |
@@ -21,6 +21,6 @@
 | Step 13: Testing & Packaging | ⏳ Pending | - | - |
 
 ## Last Action
-- **Agent**: review-agent
-- **Action**: Step 7 APPROVED and marked ✅ Complete by user
-- **Timestamp**: 2026-04-16 12:14
+- **Agent**: dev-agent
+- **Action**: Committed Step 8, iteration 1 — awaiting review
+- **Timestamp**: 2026-04-16 12:27
