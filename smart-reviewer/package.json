@@ -1,0 +1,141 @@
+{
+  "name": "smart-reviewer",
+  "displayName": "Smart Reviewer",
+  "description": "AI-powered code review agent that reviews code against PLAN.md requirements using dev-agent workflow conventions",
+  "version": "0.1.0",
+  "publisher": "smart-team",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Chat",
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "smart-reviewer",
+          "title": "Smart Reviewer",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "smart-reviewer": [
+        {
+          "id": "smart-reviewer-overview",
+          "name": "Review Context",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "chatParticipants": [
+      {
+        "id": "smart-reviewer",
+        "name": "smart-reviewer",
+        "description": "AI code review agent that reviews code against PLAN.md requirements",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "review",
+            "description": "Review a plan step against code changes"
+          },
+          {
+            "name": "status",
+            "description": "Show current review status and progress"
+          }
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "smart-reviewer.reviewStep",
+        "title": "Smart Reviewer: Review Step",
+        "category": "Smart Reviewer"
+      },
+      {
+        "command": "smart-reviewer.approveStep",
+        "title": "Smart Reviewer: Approve Step",
+        "category": "Smart Reviewer"
+      },
+      {
+        "command": "smart-reviewer.requestChanges",
+        "title": "Smart Reviewer: Request Changes",
+        "category": "Smart Reviewer"
+      },
+      {
+        "command": "smart-reviewer.viewDiff",
+        "title": "Smart Reviewer: View Full Diff",
+        "category": "Smart Reviewer"
+      },
+      {
+        "command": "smart-reviewer.viewDiffLatest",
+        "title": "Smart Reviewer: View Latest Diff",
+        "category": "Smart Reviewer"
+      },
+      {
+        "command": "smart-reviewer.openWorktree",
+        "title": "Smart Reviewer: Open Dev Worktree",
+        "category": "Smart Reviewer"
+      },
+      {
+        "command": "smart-reviewer.refresh",
+        "title": "Smart Reviewer: Refresh Sidebar",
+        "category": "Smart Reviewer"
+      },
+      {
+        "command": "smart-reviewer.settings",
+        "title": "Smart Reviewer: Open Settings",
+        "category": "Smart Reviewer"
+      }
+    ],
+    "configuration": {
+      "title": "Smart Reviewer",
+      "properties": {
+        "smart-reviewer.aiProvider": {
+          "type": "string",
+          "enum": [
+            "copilot",
+            "anthropic",
+            "openai"
+          ],
+          "default": "copilot",
+          "description": "AI provider for code review analysis",
+          "order": 1
+        },
+        "smart-reviewer.anthropicModel": {
+          "type": "string",
+          "default": "claude-sonnet-4-20250514",
+          "description": "Anthropic model to use for reviews",
+          "order": 2
+        },
+        "smart-reviewer.openaiModel": {
+          "type": "string",
+          "default": "gpt-4o",
+          "description": "OpenAI model to use for reviews",
+          "order": 3
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "openai": "^4.52.0"
+  }
+}
