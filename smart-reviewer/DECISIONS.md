@@ -167,3 +167,24 @@
   - **Context**: Could edit PROGRESS.md in-place (find/replace step row) or reconstruct entirely
   - **Rationale**: Reconstructing from the Progress object is simpler, less error-prone, and guarantees consistent output format. The file is small (<30 lines) so performance is not a concern.
   - **Date**: 2025-04-14
+
+## Step 8: Sidebar TreeView
+- **Decision**: 5-section tree structure (Plan, Worktree, Current Step, Review Files, All Steps)
+  - **Context**: Plan shows a dashboard example with plan info, current step, review files, and all steps
+  - **Rationale**: Separating into sections keeps the tree organized and scannable. Users can expand only the section they care about.
+  - **Date**: 2025-04-14
+
+- **Decision**: No caching — re-parse on every getChildren call
+  - **Context**: Tree data comes from markdown files that change frequently during reviews
+  - **Rationale**: The tree is small (5-15 steps, 3 files). Re-parsing ensures the view always reflects the latest state. File watchers (added in Step 12) will trigger refresh. Caching adds complexity with little benefit for this data size.
+  - **Date**: 2025-04-14
+
+- **Decision**: File items clickable via vscode.open, step items open PLAN.md
+  - **Context**: Plan says "File items show summaries and are clickable" and "Step items clickable"
+  - **Rationale**: `vscode.open` is the standard VSCode command for opening files. Steps open PLAN.md since that's where their content lives.
+  - **Date**: 2025-04-14
+
+- **Decision**: Use vscode.ThemeIcon instead of custom SVG icons
+  - **Context**: Need icons for different item types (plan, file, step status)
+  - **Rationale**: ThemeIcons are built into VSCode, work across all themes, and support semantic color tokens (charts.green, charts.blue, errorForeground). No custom icon files needed.
+  - **Date**: 2025-04-14

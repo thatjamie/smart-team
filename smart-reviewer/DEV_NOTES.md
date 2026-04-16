@@ -1,24 +1,29 @@
-# Dev Notes — Step 7: Markdown File Writers
+# Dev Notes — Step 8: Sidebar TreeView
 
 ## What was implemented
-- `src/writers/reviewFeedbackWriter.ts` — Write REVIEW_FEEDBACK.md in the exact format expected by dev-agent
-- `src/writers/progressWriter.ts` — Write/update PROGRESS.md with step statuses and last action
-  - Also exports `updateProgressStep()` and `updateLastAction()` helper functions for immutable state updates
+- `src/providers/reviewTreeProvider.ts` — Full sidebar TreeView provider (415 lines):
+  - `ReviewTreeItem` class extending `vscode.TreeItem` with custom itemType and filePath/stepIndex
+  - `ReviewTreeProvider` implementing `vscode.TreeDataProvider<ReviewTreeItem>`
+  - Root items: Plan info, Worktree info, Current Step, Review Files, All Steps
+  - File items are clickable (open in editor via vscode.open command)
+  - Step items are clickable (open PLAN.md)
+  - Uses `refresh()` and `setPlanRoot()` for manual updates
+  - Integrates all parsers (plan, progress, devNotes, reviewFeedback, decisions) and git operations
 
 ## Files changed
-- `src/writers/reviewFeedbackWriter.ts` — New file (84 lines). Exports `writeReviewFeedback()`
-- `src/writers/progressWriter.ts` — New file (113 lines). Exports `writeProgress()`, `updateProgressStep()`, `updateLastAction()`
+- `src/providers/reviewTreeProvider.ts` — New file (415 lines). Exports `ReviewTreeItem` and `ReviewTreeProvider`
 
 ## Decisions made
-- REVIEW_FEEDBACK.md uses Unicode escape sequences for emojis (\u2705, \u274C, etc.) to avoid any encoding issues
-- REVIEW_FEEDBACK.md heading uses em-dash (\u2014) matching the existing format
-- All sections output "None." when empty, matching the existing convention
-- Changes Required items use checkbox syntax: `- [ ] **Issue**: how to fix`
-- `writeProgress` reconstructs the entire file (not partial edits) for simplicity and correctness
-- `updateProgressStep` returns a new Progress object (immutable update pattern) — callers chain updates then write once
-- `updateLastAction` similarly returns a new object for safe state management
-- `statusToEmoji` converts StepStatus enum to emoji+label strings (✅ Complete, 🔄 In Progress, ⏳ Pending)
-- Used string concatenation instead of template literals throughout (consistency with git.ts backtick avoidance)
+- Tree structure has 5 root sections: Plan, Worktree, Current Step, Review Files, All Steps
+- Icons use `vscode.ThemeIcon` with semantic colors (charts.green for complete, charts.blue for in-progress, errorForeground for issues)
+- File items use `vscode.open` command to open files directly in editor
+- Step items also use `vscode.open` to jump to PLAN.md
+- REVIEW_FEEDBACK.md item gets `step-issues` icon type when CHANGES_REQUIRED (red error icon)
+- `sync~spin` icon for in-progress steps provides visual animation
+- `buildProgressOverrides()` helper maps Progress data into the format `parsePlan` expects
+- Data is re-parsed on every `getChildren` call (no caching) for simplicity — tree is small and refreshes are user-triggered
+- Graceful fallbacks: "No plan found" message when workspace lacks PLAN.md, "not found" for missing files
 
 ## Questions for reviewer
-- None. Both writers produce output that matches the existing markdown format used by the dev-agent workflow.
+- Should the tree provider cache parsed data and only refresh on file watcher events? Currently it re-parses on every expand, which is simple but could be slow for very large plans.
+- The `buildProgressOverrides` uses `indexOf` which is O(n) — fine for small step counts but could use a direct index if ProgressStepEntry included stepIndex.
