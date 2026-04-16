@@ -199,3 +199,24 @@
   - **Context**: Need to show diff output with syntax highlighting
   - **Rationale**: `vscode.workspace.openTextDocument({ language: 'diff' })` is the simplest approach. It provides syntax highlighting without needing custom editors or virtual documents. Opens in `ViewColumn.Beside` for side-by-side viewing.
   - **Date**: 2025-04-14
+
+## Step 10: Chat Handler
+- **Decision**: Pass secretStorage as parameter from extension.ts
+  - **Context**: Need SecretStorage for API keys but ChatRequest doesn't have a context property
+  - **Rationale**: VSCode's ChatRequest type doesn't expose secretStorage. The extension's activate function has access to `context.secrets`, so it passes it as a parameter to the chat handler. This is cleaner than storing it in a global.
+  - **Date**: 2025-04-14
+
+- **Decision**: Default to reviewing the current in-progress step
+  - **Context**: User may not specify a step number
+  - **Rationale**: The most common use case is reviewing whatever step is currently being worked on. If no step is in progress, require the user to specify a step number.
+  - **Date**: 2025-04-14
+
+- **Decision**: Parse AI response into structured ReviewFeedback inline
+  - **Context**: AI returns markdown text that needs to be structured for writing REVIEW_FEEDBACK.md
+  - **Rationale**: The AI is instructed to use specific headings and formats. Regex-based extraction works well for this structured output. Using the same approach as the file parsers keeps the code consistent.
+  - **Date**: 2025-04-14
+
+- **Decision**: Non-modal user approval via showInformationMessage
+  - **Context**: Need user confirmation before writing files
+  - **Rationale**: Non-modal allows the user to review the AI output in the chat before deciding. The message stays visible until dismissed. A modal dialog would force immediate decision without review context.
+  - **Date**: 2025-04-14
