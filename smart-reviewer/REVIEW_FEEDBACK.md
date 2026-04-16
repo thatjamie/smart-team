@@ -1,29 +1,32 @@
-# Review Feedback — Step 7: Markdown File Writers
+# Review Feedback — Step 8: Sidebar TreeView
 
 ## Summary
-Two clean writer modules that produce output matching the exact dev-agent workflow format. REVIEW_FEEDBACK.md writer outputs all sections with correct emoji/checkbox syntax. PROGRESS.md writer uses full file reconstruction with immutable state update helpers. Code compiles and packages cleanly. **No blocking issues.**
+Full sidebar TreeView provider integrating all parsers and git operations into a 5-section dashboard. `ReviewTreeItem` extends `vscode.TreeItem` correctly, `ReviewTreeProvider` implements `TreeDataProvider`, icons use semantic `ThemeIcon`/`ThemeColor`, file and step items are clickable. Code compiles and packages cleanly. **No blocking issues.**
 
 ## ✅ Approved Items
-- **`src/writers/reviewFeedbackWriter.ts`**: 84 lines, `writeReviewFeedback()` produces exact format ✅
-- **REVIEW_FEEDBACK.md format**: Heading with em-dash, Summary, ✅ Approved Items, ❌ Changes Required, 💡 Suggestions, ❓ Questions, Iteration/Status — all correct ✅
-- **Unicode escape sequences** for emojis — avoids encoding issues ✅
-- **Empty sections** output "None." matching convention ✅
-- **Changes Required** use checkbox syntax: `- [ ] **Issue**: how to fix` ✅
-- **`src/writers/progressWriter.ts`**: 113 lines, `writeProgress()` reconstructs full file ✅
-- **`updateProgressStep()`**: Immutable update pattern — returns new Progress object ✅
-- **`updateLastAction()`**: Immutable update pattern — returns new Progress object ✅
-- **`statusToEmoji()`**: Correct StepStatus → emoji+label mapping ✅
-- **Step index** converted from zero-based to one-based in output heading ✅
-- **Iteration format**: `N/5` for active steps, `-` for pending ✅
-- **Uses `types.ts` interfaces**: `ReviewFeedback`, `Progress`, `StepStatus`, `ProgressStepEntry` ✅
-- **DECISIONS.md**: 3 decisions logged ✅
+- **`src/providers/reviewTreeProvider.ts`**: 415 lines, well-structured with clear section methods ✅
+- **`ReviewTreeItem`**: Extends `vscode.TreeItem` with `itemType`, `filePath`, `stepIndex` ✅
+- **`ReviewTreeProvider`**: Implements `vscode.TreeDataProvider` with `refresh()` and `setPlanRoot()` ✅
+- **5 root sections**: Plan, Worktree, Current Step, Review Files, All Steps ✅
+- **File items clickable**: Uses `vscode.open` command with `vscode.Uri.file()` ✅
+- **Step items clickable**: Opens PLAN.md at correct step ✅
+- **Step status icons**: `step-complete` (green check), `step-inprogress` (blue spin), `step-pending` (outline) ✅
+- **CHANGES_REQUIRED red icon**: `step-issues` type with `errorForeground` color ✅
+- **Integrates all parsers**: plan, progress, devNotes, reviewFeedback, decisions ✅
+- **Integrates git operations**: `getProjectRoot`, `getProjectName`, `findDevWorktree` ✅
+- **`buildProgressOverrides()` helper**: Correctly maps Progress to plan parser format ✅
+- **Graceful fallbacks**: "No plan found", "not found" for missing files ✅
+- **Summary descriptions**: File counts, decision counts, issue counts, dispute counts ✅
+- **DECISIONS.md**: 4 decisions logged ✅
 - **DEV_NOTES.md**: Complete and accurate ✅
 
 ## ❌ Changes Required
 None.
 
 ## 💡 Suggestions (Optional)
-- None. Both writers produce clean, well-formatted output matching the workflow conventions.
+- Regarding the developer's question about caching: The no-caching approach is correct for now. The tree is small and refreshes are user-triggered. If performance becomes an issue later, a simple invalidation flag (set by file watchers in Step 12) would suffice — no need for complex caching.
+
+- Regarding `buildProgressOverrides` using `indexOf`: Since `progress.steps` array index matches the plan step index by convention, `indexOf` is actually O(1) here (first match on ordered data). No change needed.
 
 ## ❓ Questions
 None.
@@ -32,7 +35,7 @@ None.
 | Check | Result |
 |-------|--------|
 | `npx tsc` (compile) | ✅ Clean — 0 errors |
-| `npx vsce package` | ✅ `smart-reviewer-0.1.0.vsix` (36 files, 38.02KB) |
+| `npx vsce package` | ✅ `smart-reviewer-0.1.0.vsix` (38 files, 42.45KB) |
 
 ## Iteration
 - Iteration: 1/5
