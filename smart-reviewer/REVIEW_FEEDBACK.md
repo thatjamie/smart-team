@@ -1,35 +1,41 @@
-# Review Feedback — Step 11: Context Builder
+# Review Feedback — Step 12: Extension Activation
 
 ## Summary
-Clean context assembly module that correctly gathers all shared state, finds the worktree, retrieves the diff, and assembles the `ReviewPromptContext` with all 8 fields from the plan's `ReviewContext` spec. Pure data assembly with no VSCode dependencies — testable in isolation. Code compiles and packages cleanly. **No blocking issues.**
+Complete extension activation wiring that integrates all previously built modules. Plan root detection, chat participant, TreeView, 8 commands, 5 file watchers, and workspace change detection are all properly registered and disposed. However, the chat handler duplicates context assembly logic that was purpose-built in Step 11's `contextBuilder`. This should be refactored to keep the codebase lean.
 
 ## ✅ Approved Items
-- **`src/contextBuilder.ts`**: 145 lines, well-structured with clear phases ✅
-- **`ReviewContextResult` interface**: Bundles plan, step, stepIndex, iteration, progress, worktreePath, promptContext ✅
-- **`buildReviewContext(planRoot, stepIndex, iteration)`**: Full 5-phase context assembly ✅
-- **`buildCurrentStepContext(planRoot)`**: Convenience function auto-detects in-progress step ✅
-- **All 8 ReviewContext fields populated**:
-  - `planStep`: step content ✅
-  - `planFull`: all steps with titles + content ✅
-  - `progressState`: PROGRESS.md raw text ✅
-  - `devNotes`: DEV_NOTES.md raw or fallback ✅
-  - `pastDecisions`: formatted decisions list or fallback ✅
-  - `diff`: iteration-aware via `getDiffForStep` ✅
-  - `testResults`/`lintResults`: not populated (optional per plan) ✅
-- **Integrates all parsers**: planParser, progressParser, devNotesParser, decisionsParser ✅
-- **Integrates git + diffViewer**: `getProjectRoot`, `findDevWorktree`, `getDiffForStep` ✅
-- **Returns `ReviewPromptContext`**: Directly usable by `buildReviewSystemPrompt()` ✅
-- **No VSCode API dependencies**: Pure data assembly, testable in isolation ✅
-- **Error handling**: Returns `undefined` on missing plan/worktree/invalid step ✅
-- **`readTextFile` helper**: Centralizes read-or-fallback pattern ✅
+- **`src/extension.ts`**: Rewritten from 60-line stub to 201 lines of full wiring ✅
+- **Chat participant `@smart-reviewer`**: Registered with icon, passes `context.secrets` for API keys ✅
+- **TreeView registration**: `ReviewTreeProvider` with `smart-reviewer-overview` ID, `showCollapseAll` ✅
+- **Plan root detection**: `detectPlanRoot()` scans all workspace folders via `findPlanFile()` ✅
+- **`planRoot` as closure variable**: Shared between chat handler, tree provider, and commands ✅
+- **8 commands wired**: reviewStep, approveStep, requestChanges, viewDiff, viewDiffLatest, openWorktree, refresh, settings ✅
+- **5 file watchers**: PLAN.md, PROGRESS.md, DEV_NOTES.md, REVIEW_FEEDBACK.md, DECISIONS.md ✅
+- **Glob patterns**: `**/PLAN.md` catches files in subdirectories (monorepo support) ✅
+- **`onDidCreate` re-detects plan root**: Handles new workspace folders mid-session ✅
+- **Workspace folder change detection**: `onDidChangeWorkspaceFolders` triggers re-detection ✅
+- **Error handling**: Warning messages for missing plan/worktree/diff in commands ✅
+- **`deactivate()` stub**: Clean shutdown ✅
 - **DECISIONS.md**: 3 decisions logged ✅
 - **DEV_NOTES.md**: Complete and accurate ✅
 
 ## ❌ Changes Required
-None.
+
+- [ ] **Refactor chatHandler to use `contextBuilder` module** (`src/chatHandler.ts`):
+
+  The chat handler currently has ~60 lines of inline context assembly (plan parsing, progress reading, devNotes reading, decisions reading, diff retrieval) that duplicates the logic in `src/contextBuilder.ts` — a module built specifically for this purpose in Step 11. This violates DRY and defeats the purpose of the context builder module.
+
+  **Fix**: Replace the inline context assembly in `handleChatRequest` (approximately lines 120-200 in the current chatHandler) with a call to `buildReviewContext()` or `buildCurrentStepContext()` from `src/contextBuilder.ts`. The chatHandler should focus on:
+  1. Routing `/review` vs `/status`
+  2. Calling `buildReviewContext()` to get assembled context
+  3. Building the system prompt via `buildReviewSystemPrompt()`
+  4. Calling the AI provider
+  5. Parsing the response and handling user approval
+
+  This should reduce chatHandler by ~50-60 lines and keep context assembly logic in one place.
 
 ## 💡 Suggestions (Optional)
-- Regarding the developer's question about refactoring chatHandler to use this module: Agreed, that's best done in Step 12 when wiring everything together. The current inline context assembly in chatHandler works fine for now and can be replaced cleanly.
+- None beyond the required change above.
 
 ## ❓ Questions
 None.
@@ -38,8 +44,8 @@ None.
 | Check | Result |
 |-------|--------|
 | `npx tsc` (compile) | ✅ Clean — 0 errors |
-| `npx vsce package` | ✅ `smart-reviewer-0.1.0.vsix` (44 files, 52.34KB) |
+| `npx vsce package` | ✅ `smart-reviewer-0.1.0.vsix` (44 files, 53.3KB) |
 
 ## Iteration
 - Iteration: 1/5
-- Status: APPROVED
+- Status: CHANGES_REQUIRED

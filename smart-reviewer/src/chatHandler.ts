@@ -1,19 +1,17 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { Plan, Step, StepStatus, Progress, ReviewFeedback, ChangesRequiredItem } from './types';
+import { StepStatus, Progress, ReviewFeedback, ChangesRequiredItem } from './types';
 import { parsePlan, findPlanFile } from './parsers/planParser';
 import { parseProgress } from './parsers/progressParser';
-import { parseDevNotes } from './parsers/devNotesParser';
-import { parseDecisions } from './parsers/decisionsParser';
 import { parseReviewFeedback } from './parsers/reviewFeedbackParser';
-import { getProjectRoot, getProjectName, findDevWorktree, getCurrentBranch, getLatestCommit } from './git';
-import { getDiffForStep } from './diffViewer';
-import { buildReviewSystemPrompt, ReviewPromptContext } from './prompts/reviewSystemPrompt';
+import { getLatestCommit, getProjectRoot, findDevWorktree } from './git';
+import { buildReviewSystemPrompt } from './prompts/reviewSystemPrompt';
 import { writeReviewFeedback } from './writers/reviewFeedbackWriter';
 import { writeProgress, updateProgressStep, updateLastAction } from './writers/progressWriter';
 import { ProviderFactory } from './ai/providerFactory';
 import { AiMessage } from './ai/provider';
+import { buildReviewContext } from './contextBuilder';
 
 /**
  * Handle the @smart-reviewer chat participant request.
@@ -164,50 +162,26 @@ async function handleReview(
     response.markdown('\uD83D\uDD0D **Reviewing Step ' + stepNumber + ': ' + step.title + '** (iteration ' + iteration + '/5)\n\n');
     response.progress('Gathering review context...');
 
-    // 1. Find dev worktree
-    const projectRoot = getProjectRoot(planRoot);
-    if (!projectRoot) {
-        response.markdown('\u26A0\uFE0F Could not determine project root.');
-        return;
-    }
-    const worktree = findDevWorktree(projectRoot);
-    if (!worktree.exists) {
-        response.markdown('\u26A0\uFE0F Dev worktree not found at ' + worktree.path);
+    // Build full review context using contextBuilder
+    const reviewContext = buildReviewContext(planRoot, stepIndex, iteration);
+    if (!reviewContext) {
+        response.markdown('\u26A0\uFE0F Could not build review context. Ensure dev worktree exists with commits.');
         return;
     }
 
-    // 2. Gather context
-    const devNotes = parseDevNotes(path.join(planRoot, 'DEV_NOTES.md'));
-    const decisions = parseDecisions(path.join(planRoot, 'DECISIONS.md'));
-
-    // 3. Get diff
-    response.progress('Getting diff...');
-    const diff = getDiffForStep(worktree.path, iteration - 1);
-    if (!diff || diff.trim().length === 0) {
+    if (!reviewContext.promptContext.diff || reviewContext.promptContext.diff.trim().length === 0) {
         response.markdown('\u26A0\uFE0F No diff found. Ensure the dev worktree has commits.');
         return;
     }
 
-    // 4. Build system prompt context
-    const promptContext: ReviewPromptContext = {
-        planStep: step.content,
-        planFull: plan.steps.map(s => '## ' + s.title + '\n' + s.content).join('\n\n'),
-        progressState: progress ? fs.readFileSync(path.join(planRoot, 'PROGRESS.md'), 'utf-8') : 'No PROGRESS.md found.',
-        devNotes: devNotes ? devNotes.raw : 'No DEV_NOTES.md found.',
-        pastDecisions: decisions.length > 0
-            ? decisions.map(d => '- **' + d.decision + '** (' + d.step + '): ' + d.rationale).join('\n')
-            : 'No decisions recorded.',
-        diff: diff,
-    };
-
-    // 5. Build messages
-    const systemPrompt = buildReviewSystemPrompt(promptContext);
+    // Build messages
+    const systemPrompt = buildReviewSystemPrompt(reviewContext.promptContext);
     const messages: AiMessage[] = [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: 'Please review Step ' + stepNumber + ': ' + step.title + '. Produce your review in the REVIEW_FEEDBACK.md format.' },
     ];
 
-    // 6. Send to AI with streaming
+    // Send to AI with streaming
     response.progress('Sending to AI for review...');
     let aiResponseText = '';
 
@@ -233,8 +207,8 @@ async function handleReview(
         return;
     }
 
-    // 7. Parse AI response into structured feedback
-    const feedback = parseAiResponse(aiResponseText, stepIndex, step.title, iteration);
+    // Parse AI response into structured feedback
+    const feedback = parseAiResponse(aiResponseText, stepIndex, reviewContext.step.title, iteration);
     if (!feedback) {
         response.markdown('\n\n\u26A0\uFE0F Could not parse AI response into structured feedback.');
         return;
@@ -256,12 +230,12 @@ async function handleReview(
         // 9. Write REVIEW_FEEDBACK.md
         writeReviewFeedback(path.join(planRoot, 'REVIEW_FEEDBACK.md'), feedback);
 
-        // 10. Update PROGRESS.md — keep step as In Progress (reviewer never marks Complete)
-        if (progress) {
-            let updatedProgress = updateProgressStep(progress, stepIndex, {
+        // Update PROGRESS.md — keep step as In Progress (reviewer never marks Complete)
+        if (reviewContext.progress) {
+            let updatedProgress = updateProgressStep(reviewContext.progress, stepIndex, {
                 status: StepStatus.InProgress,
                 iteration: iteration,
-                lastCommit: getLatestCommit(worktree.path) || step.lastCommit,
+                lastCommit: getLatestCommit(reviewContext.worktreePath) || reviewContext.step.lastCommit,
             });
 
             const now = new Date();
