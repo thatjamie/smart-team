@@ -236,3 +236,19 @@
   - **Context**: Most common use case is reviewing the current in-progress step
   - **Rationale**: Avoids duplicating the "find current step + compute iteration" logic in callers. Single point of change if the step detection logic evolves.
   - **Date**: 2025-04-14
+
+## Step 12: Extension Activation
+- **Decision**: Plan root stored as closure variable, not a class property
+  - **Context**: Multiple components (chat handler, tree provider, commands) need the plan root
+  - **Rationale**: Using a closure variable in `activate()` is simpler than creating a manager class. All registered handlers capture the variable. The `detectPlanRoot()` inner function re-detects when needed (refresh, workspace change).
+  - **Date**: 2025-04-14
+
+- **Decision**: File watchers use glob patterns for shared state files
+  - **Context**: Need to auto-refresh the tree when PLAN.md, PROGRESS.md, etc. change
+  - **Rationale**: `**/PLAN.md` catches files in subdirectories (monorepo pattern). `onDidCreate` re-detects plan root for newly added folders. `onDidChange` and `onDidDelete` trigger tree refresh.
+  - **Date**: 2025-04-14
+
+- **Decision**: Commands open chat rather than implementing inline logic
+  - **Context**: reviewStep and approveStep commands need chat context
+  - **Rationale**: `workbench.action.chat.open` with `@smart-reviewer /review` leverages the full chat handler workflow (streaming, two-phase approval). Duplicating that logic in a command handler would violate DRY.
+  - **Date**: 2025-04-14

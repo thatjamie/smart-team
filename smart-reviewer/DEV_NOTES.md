@@ -1,27 +1,34 @@
-# Dev Notes — Step 11: Context Builder
+# Dev Notes — Step 12: Extension Activation
 
 ## What was implemented
-- `src/contextBuilder.ts` — Context assembly module (145 lines):
-  - `ReviewContextResult` interface — bundles plan, step, iteration, progress, worktree path, and assembled prompt context
-  - `buildReviewContext(planRoot, stepIndex, iteration)` — full context assembly:
-    1. Parse PLAN.md and PROGRESS.md
-    2. Find dev worktree
-    3. Parse DEV_NOTES.md and DECISIONS.md
-    4. Get diff via diffViewer
-    5. Assemble `ReviewPromptContext` with all gathered data
-  - `buildCurrentStepContext(planRoot)` — convenience function that auto-detects the current in-progress step
-  - `readTextFile()` helper with fallback
+- `src/extension.ts` — Full extension activation wiring (201 lines, was 60 lines of stubs):
+  - Plan root detection: scans workspace folders for PLAN.md using `findPlanFile`
+  - TreeView registration: creates `ReviewTreeProvider` and `TreeView` with ID `smart-reviewer-overview`
+  - Chat participant: registers `@smart-reviewer` with `handleChatRequest`, passes `context.secrets`
+  - 8 commands wired to real implementations:
+    - `reviewStep` → opens chat with `/review`
+    - `approveStep` → opens chat with `/review`
+    - `requestChanges` → info message directing to chat
+    - `viewDiff` → finds worktree, gets full diff, opens in editor
+    - `viewDiffLatest` → finds worktree, gets HEAD~1 diff, opens in editor
+    - `openWorktree` → opens worktree folder in new window
+    - `refresh` → re-detects plan root, refreshes tree
+    - `settings` → opens VSCode settings for `smart-reviewer`
+  - 5 file watchers: PLAN.md, PROGRESS.md, DEV_NOTES.md, REVIEW_FEEDBACK.md, DECISIONS.md
+  - Workspace folder change detection: re-detects plan root on folder changes
 
 ## Files changed
-- `src/contextBuilder.ts` — New file (145 lines). Exports `ReviewContextResult`, `buildReviewContext()`, `buildCurrentStepContext()`
+- `src/extension.ts` — Rewritten (201 lines). Was 60 lines of stubs, now fully wired.
 
 ## Decisions made
-- Returns `undefined` on any error (no plan found, no worktree, invalid step index) — consistent with parser patterns
-- `buildCurrentStepContext` is a convenience wrapper that finds the in-progress step and delegates to `buildReviewContext`
-- Iteration is computed from PROGRESS.md (existing iteration + 1)
-- `planFull` includes full step content (matching the fix from Step 10 iteration 2)
-- `readTextFile` helper centralizes the "read file or return fallback" pattern used previously inline in chatHandler
-- This module does NOT depend on VSCode APIs — pure data assembly, testable in isolation
+- Plan root detected by scanning all workspace folders for PLAN.md — supports monorepo setups
+- `planRoot` stored as closure variable, shared between chat handler and tree provider
+- File watchers use glob patterns (`**/PLAN.md`, etc.) — catches files in subdirectories
+- `onDidCreate` watcher re-detects plan root (new workspace folder added mid-session)
+- Commands `reviewStep` and `approveStep` both open chat with `/review` — the chat handler's two-phase approval handles the distinction
+- `openWorktree` opens in a new window (`true` flag) to avoid disrupting current workspace
+- No backticks anywhere — consistent with project-wide rule
+- `detectPlanRoot` defined as inner function to capture closure state
 
 ## Questions for reviewer
-- Should the chatHandler be refactored to use this module? Currently chatHandler assembles context inline. This module could replace that logic, but that refactor is better done in Step 12 (Extension Activation) when wiring everything together.
+- The `chatHandler` still assembles context inline rather than using `contextBuilder`. Should it be refactored to use `buildReviewContext` from Step 11? This would reduce duplication but changes the chatHandler's internals.
