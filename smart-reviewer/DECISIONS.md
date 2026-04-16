@@ -151,3 +151,19 @@
   - **Context**: TS compilation errors with backticks inside JSDoc comments and some template literal contexts
   - **Rationale**: The ES2022/commonjs target with the current TypeScript version has parsing issues with backticks in certain JSDoc positions. Using string concatenation is safer and compiles cleanly.
   - **Date**: 2025-04-14
+
+## Step 7: Markdown File Writers
+- **Decision**: Use Unicode escape sequences for emojis in writer output
+  - **Context**: Need to output emoji characters (✅, ❌, 💡, ❓, 🔄, ⏳) in markdown files
+  - **Rationale**: Unicode escapes (\u2705, \u274C, etc.) are unambiguous and avoid potential encoding issues across different systems and editors. They compile cleanly in TS source.
+  - **Date**: 2025-04-14
+
+- **Decision**: Immutable state update pattern for Progress manipulation
+  - **Context**: Reviewer needs to update step status and last action before writing PROGRESS.md
+  - **Rationale**: `updateProgressStep()` and `updateLastAction()` return new objects instead of mutating. This is safer when state flows through multiple transformations (update status -> update last action -> write). Also makes debugging easier.
+  - **Date**: 2025-04-14
+
+- **Decision**: Full file reconstruction for writeProgress instead of partial edits
+  - **Context**: Could edit PROGRESS.md in-place (find/replace step row) or reconstruct entirely
+  - **Rationale**: Reconstructing from the Progress object is simpler, less error-prone, and guarantees consistent output format. The file is small (<30 lines) so performance is not a concern.
+  - **Date**: 2025-04-14

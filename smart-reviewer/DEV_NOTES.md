@@ -1,29 +1,24 @@
-# Dev Notes — Step 6: Git Operations
+# Dev Notes — Step 7: Markdown File Writers
 
 ## What was implemented
-- `src/git.ts` — Read-only git operations module (192 lines):
-  - `getProjectRoot(dir)` — find git toplevel via `git rev-parse --show-toplevel`
-  - `getProjectName(projectRoot)` — basename of project root
-  - `findDevWorktree(projectRoot)` — locate `../<name>-dev/` worktree per dev-agent convention
-  - `getDiff(dir, base?)` — full diff against base branch (auto-detects main/master)
-  - `getLatestDiff(dir)` — diff of HEAD~1 vs HEAD (for iteration reviews)
-  - `guessBaseBranch(dir)` — detect main or master
-  - `getCurrentBranch(dir)` — current branch name
-  - `getLatestCommit(dir)` — short commit hash
-- All operations are strictly read-only — reviewer never creates worktrees, commits, or modifies code
+- `src/writers/reviewFeedbackWriter.ts` — Write REVIEW_FEEDBACK.md in the exact format expected by dev-agent
+- `src/writers/progressWriter.ts` — Write/update PROGRESS.md with step statuses and last action
+  - Also exports `updateProgressStep()` and `updateLastAction()` helper functions for immutable state updates
 
 ## Files changed
-- `src/git.ts` — New file (192 lines). Exports 7 functions.
+- `src/writers/reviewFeedbackWriter.ts` — New file (84 lines). Exports `writeReviewFeedback()`
+- `src/writers/progressWriter.ts` — New file (113 lines). Exports `writeProgress()`, `updateProgressStep()`, `updateLastAction()`
 
 ## Decisions made
-- Used `spawnSync` with 30s timeout and 10MB maxBuffer for large diffs
-- All functions return empty string or undefined on error — never throw to callers
-- `findDevWorktree` follows dev-agent convention: `../<projectName>-dev/`
-- `guessBaseBranch` tries `main` first, then `master`, defaults to `main`
-- `getDiff` falls back from `diff main...HEAD` to `diff main HEAD` if triple-dot fails
-- Avoided backticks in JSDoc comments and template literals to prevent TS compilation issues with the current tsconfig target
-- Added `getCurrentBranch` and `getLatestCommit` helpers beyond plan spec — useful for tree view and context builder
+- REVIEW_FEEDBACK.md uses Unicode escape sequences for emojis (\u2705, \u274C, etc.) to avoid any encoding issues
+- REVIEW_FEEDBACK.md heading uses em-dash (\u2014) matching the existing format
+- All sections output "None." when empty, matching the existing convention
+- Changes Required items use checkbox syntax: `- [ ] **Issue**: how to fix`
+- `writeProgress` reconstructs the entire file (not partial edits) for simplicity and correctness
+- `updateProgressStep` returns a new Progress object (immutable update pattern) — callers chain updates then write once
+- `updateLastAction` similarly returns a new object for safe state management
+- `statusToEmoji` converts StepStatus enum to emoji+label strings (✅ Complete, 🔄 In Progress, ⏳ Pending)
+- Used string concatenation instead of template literals throughout (consistency with git.ts backtick avoidance)
 
 ## Questions for reviewer
-- `getDiff` tries triple-dot first (shows changes on current branch only), then falls back to double-dot. Is the fallback appropriate, or should we just fail?
-- Is 10MB maxBuffer sufficient for large diffs? Alternative: use streaming for very large repos.
+- None. Both writers produce output that matches the existing markdown format used by the dev-agent workflow.
