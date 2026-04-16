@@ -191,7 +191,7 @@ async function handleReview(
     // 4. Build system prompt context
     const promptContext: ReviewPromptContext = {
         planStep: step.content,
-        planFull: plan.steps.map(s => '## ' + s.title).join('\n'),
+        planFull: plan.steps.map(s => '## ' + s.title + '\n' + s.content).join('\n\n'),
         progressState: progress ? fs.readFileSync(path.join(planRoot, 'PROGRESS.md'), 'utf-8') : 'No PROGRESS.md found.',
         devNotes: devNotes ? devNotes.raw : 'No DEV_NOTES.md found.',
         pastDecisions: decisions.length > 0
@@ -256,10 +256,10 @@ async function handleReview(
         // 9. Write REVIEW_FEEDBACK.md
         writeReviewFeedback(path.join(planRoot, 'REVIEW_FEEDBACK.md'), feedback);
 
-        // 10. Update PROGRESS.md
+        // 10. Update PROGRESS.md — keep step as In Progress (reviewer never marks Complete)
         if (progress) {
             let updatedProgress = updateProgressStep(progress, stepIndex, {
-                status: feedback.status === 'APPROVED' && iteration >= 1 ? StepStatus.Complete : step.status,
+                status: StepStatus.InProgress,
                 iteration: iteration,
                 lastCommit: getLatestCommit(worktree.path) || step.lastCommit,
             });
@@ -282,11 +282,48 @@ async function handleReview(
         }
 
         response.markdown('\u2705 Review feedback written to REVIEW_FEEDBACK.md and PROGRESS.md updated.');
+        response.markdown('\n\n\uD83D\uDD04 **Step ' + stepNumber + ' remains In Progress.**');
 
+        // 11. Phase 2: If APPROVED, ask user to explicitly approve marking Complete
         if (feedback.status === 'APPROVED') {
-            response.markdown('\n\n\u2705 **Step ' + stepNumber + ' marked as Complete.**');
+            response.markdown('\n\n\u2705 The review was **APPROVED**. ');
+            const approvalChoice = await vscode.window.showInformationMessage(
+                'Review APPROVED for Step ' + stepNumber + '. Mark step as Complete?',
+                { modal: false },
+                'Mark Complete',
+                'Keep In Progress'
+            );
+
+            if (approvalChoice === 'Mark Complete') {
+                // Re-read and update PROGRESS.md to mark Complete
+                const updatedProgress2 = parseProgress(path.join(planRoot, 'PROGRESS.md'));
+                if (updatedProgress2) {
+                    let finalProgress = updateProgressStep(updatedProgress2, stepIndex, {
+                        status: StepStatus.Complete,
+                    });
+
+                    const now2 = new Date();
+                    const timestamp2 = now2.getFullYear() + '-' +
+                        String(now2.getMonth() + 1).padStart(2, '0') + '-' +
+                        String(now2.getDate()).padStart(2, '0') + ' ' +
+                        String(now2.getHours()).padStart(2, '0') + ':' +
+                        String(now2.getMinutes()).padStart(2, '0');
+
+                    finalProgress = updateLastAction(
+                        finalProgress,
+                        'review-agent',
+                        'Step ' + stepNumber + ' APPROVED and marked Complete by user',
+                        timestamp2
+                    );
+
+                    writeProgress(path.join(planRoot, 'PROGRESS.md'), finalProgress);
+                }
+                response.markdown('\u2705 **Step ' + stepNumber + ' marked as Complete.**');
+            } else {
+                response.markdown('\u23F8 Step ' + stepNumber + ' kept In Progress.');
+            }
         } else {
-            response.markdown('\n\n\u274C **Step ' + stepNumber + ' remains In Progress.** Address the ' + feedback.changesRequired.length + ' issues and re-review.');
+            response.markdown('\n\n\u274C **CHANGES_REQUIRED** \u2014 Address the ' + feedback.changesRequired.length + ' issues and re-review.');
         }
     } else {
         response.markdown('\n\u23F8 Review discarded. No files were written.');
@@ -305,8 +342,12 @@ function parseAiResponse(
     stepTitle: string,
     iteration: number
 ): ReviewFeedback | undefined {
-    // Extract status
-    const status = text.includes('CHANGES_REQUIRED') ? 'CHANGES_REQUIRED' as const : 'APPROVED' as const;
+    // Extract status from the Iteration section specifically
+    const iterSection = text.match(/##\s*Iteration[\s\S]*?(?=\n##|$)/i);
+    const statusText = iterSection ? iterSection[0] : '';
+    const status = statusText.includes('CHANGES_REQUIRED') ? 'CHANGES_REQUIRED' as const
+        : statusText.includes('APPROVED') ? 'APPROVED' as const
+        : 'CHANGES_REQUIRED' as const; // safe default
 
     // Extract summary
     const summaryMatch = text.match(/##\s+Summary\s*\n([\s\S]*?)(?=\n##|$)/i);
