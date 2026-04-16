@@ -220,3 +220,19 @@
   - **Context**: Need user confirmation before writing files
   - **Rationale**: Non-modal allows the user to review the AI output in the chat before deciding. The message stays visible until dismissed. A modal dialog would force immediate decision without review context.
   - **Date**: 2025-04-14
+
+## Step 11: Context Builder
+- **Decision**: Pure data assembly module, no VSCode API dependencies
+  - **Context**: Context builder gathers data from parsers, git, and diffViewer into a single object
+  - **Rationale**: Keeping this module free of VSCode APIs makes it testable in isolation (unit tests without VSCode runtime). The chatHandler and extension.ts handle all VSCode-specific concerns.
+  - **Date**: 2025-04-14
+
+- **Decision**: Return undefined on any error rather than throwing
+  - **Context**: Plan may not exist, worktree may be missing, step index may be invalid
+  - **Rationale**: Consistent with the parser pattern throughout the codebase. Callers check for undefined rather than wrapping in try/catch. Simpler control flow.
+  - **Date**: 2025-04-14
+
+- **Decision**: Provide `buildCurrentStepContext` convenience function
+  - **Context**: Most common use case is reviewing the current in-progress step
+  - **Rationale**: Avoids duplicating the "find current step + compute iteration" logic in callers. Single point of change if the step detection logic evolves.
+  - **Date**: 2025-04-14
