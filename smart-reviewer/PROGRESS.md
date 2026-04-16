@@ -17,10 +17,10 @@
 | Step 9: Diff Viewer | ✅ Complete | 1/5 | 643c8dc |
 | Step 10: Chat Handler | ✅ Complete | 2/5 | 6adda0d |
 | Step 11: Context Builder | ✅ Complete | 1/5 | 2d04752 |
-| Step 12: Extension Activation | ⏳ Pending | - | - |
+| Step 12: Extension Activation | 🔄 In Progress | 1/5 | c0c240a |
 | Step 13: Testing & Packaging | ⏳ Pending | - | - |
 
 ## Last Action
-- **Agent**: review-agent
-- **Action**: Step 11 APPROVED and marked ✅ Complete by user
-- **Timestamp**: 2026-04-16 14:40
+- **Agent**: dev-agent
+- **Action**: Committed Step 12, iteration 1 — awaiting review
+- **Timestamp**: 2026-04-16 14:53
