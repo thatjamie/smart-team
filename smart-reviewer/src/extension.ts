@@ -54,14 +54,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
     // ─── Chat Participant ─────────────────────────────────────────────────────
 
-    const chatParticipant = vscode.chat.createChatParticipant(
-        'smart-reviewer',
-        async (request: vscode.ChatRequest, chatContext: vscode.ChatContext, response: vscode.ChatResponseStream, token: vscode.CancellationToken) => {
-            await handleChatRequest(request, response, token, planRoot, context.secrets);
-        }
-    );
-    chatParticipant.iconPath = vscode.Uri.joinPath(context.extensionUri, 'media', 'icon.svg');
-    context.subscriptions.push(chatParticipant);
+    try {
+        const chatParticipant = vscode.chat.createChatParticipant(
+            'smart-reviewer',
+            async (request: vscode.ChatRequest, chatContext: vscode.ChatContext, response: vscode.ChatResponseStream, token: vscode.CancellationToken) => {
+                await handleChatRequest(request, response, token, planRoot, context.secrets);
+            }
+        );
+        chatParticipant.iconPath = vscode.Uri.joinPath(context.extensionUri, 'media', 'icon.svg');
+        context.subscriptions.push(chatParticipant);
+    } catch (err) {
+        console.warn('Smart Reviewer: Chat participant not available.', err);
+    }
 
     // ─── Commands ─────────────────────────────────────────────────────────────
 

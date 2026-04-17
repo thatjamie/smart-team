@@ -108,17 +108,29 @@
           "description": "AI provider for code review analysis",
           "order": 1
         },
+        "smart-reviewer.anthropicBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Anthropic API base URL (leave empty for default: https://api.anthropic.com)",
+          "order": 2
+        },
         "smart-reviewer.anthropicModel": {
           "type": "string",
           "default": "claude-sonnet-4-20250514",
           "description": "Anthropic model to use for reviews",
-          "order": 2
+          "order": 3
+        },
+        "smart-reviewer.openaiBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API base URL (leave empty for default: https://api.openai.com/v1)",
+          "order": 4
         },
         "smart-reviewer.openaiModel": {
           "type": "string",
           "default": "gpt-4o",
           "description": "OpenAI model to use for reviews",
-          "order": 3
+          "order": 5
         }
       }
     }

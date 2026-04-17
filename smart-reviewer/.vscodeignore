@@ -2,7 +2,8 @@
 .vscode-test/**
 src/**
 **/*.map
-node_modules/**
+node_modules/@types/**
+node_modules/typescript/**
 .gitignore
 tsconfig.json
 **/*.md

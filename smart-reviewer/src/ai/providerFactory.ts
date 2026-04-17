@@ -55,7 +55,8 @@ export class ProviderFactory {
         }
 
         const model = config.get<string>('anthropicModel', 'claude-sonnet-4-20250514');
-        return new AnthropicProvider(apiKey, model);
+        const baseUrl = config.get<string>('anthropicBaseUrl', '');
+        return new AnthropicProvider(apiKey, model, baseUrl || undefined);
     }
 
     /**
@@ -73,6 +74,7 @@ export class ProviderFactory {
         }
 
         const model = config.get<string>('openaiModel', 'gpt-4o');
-        return new OpenAIProvider(apiKey, model);
+        const baseUrl = config.get<string>('openaiBaseUrl', '');
+        return new OpenAIProvider(apiKey, model, baseUrl || undefined);
     }
 }
