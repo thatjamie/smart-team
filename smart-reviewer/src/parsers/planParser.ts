@@ -29,31 +29,77 @@ export function parsePlan(planFilePath: string, progressOverrides?: Map<number, 
  *
  * Search order:
  * 1. PLAN.md at the workspace root
- * 2. Any subdirectory/PLAN.md (monorepo pattern)
+ * 2. Recursive search in subdirectories up to maxDepth levels deep
  *
  * @param workspaceRoot - The workspace root directory
+ * @param maxDepth - Maximum subdirectory depth to search (default: 3)
  * @returns Absolute path to PLAN.md, or undefined if not found
  */
-export function findPlanFile(workspaceRoot: string): string | undefined {
+export function findPlanFile(workspaceRoot: string, maxDepth: number = 3): string | undefined {
     // Check root level
     const rootPlan = path.join(workspaceRoot, 'PLAN.md');
     if (fs.existsSync(rootPlan)) {
         return rootPlan;
     }
 
-    // Check subdirectories (monorepo pattern)
+    // Recursive search in subdirectories
+    if (maxDepth > 0) {
+        const result = searchDirectory(workspaceRoot, maxDepth);
+        if (result) {
+            return result;
+        }
+    }
+
+    return undefined;
+}
+
+/**
+ * Recursively search for PLAN.md in subdirectories.
+ *
+ * Skips common non-project directories (node_modules, .git, .vscode, dist, out, build).
+ * Returns the first match found (breadth-first search).
+ *
+ * @param dir - Directory to search in
+ * @param remainingDepth - How many more levels to descend
+ * @returns Absolute path to PLAN.md, or undefined if not found
+ */
+function searchDirectory(dir: string, remainingDepth: number): string | undefined {
+    // Directories to skip
+    const skipDirs = new Set([
+        'node_modules', '.git', '.svn', '.hg',
+        '.vscode', '.idea',
+        'dist', 'out', 'build', 'target',
+        '__pycache__', '.cache', '.next',
+    ]);
+
+    let entries: fs.Dirent[];
     try {
-        const entries = fs.readdirSync(workspaceRoot, { withFileTypes: true });
-        for (const entry of entries) {
-            if (entry.isDirectory()) {
-                const subPlan = path.join(workspaceRoot, entry.name, 'PLAN.md');
-                if (fs.existsSync(subPlan)) {
-                    return subPlan;
-                }
+        entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+        return undefined;
+    }
+
+    // First pass: check for PLAN.md in immediate subdirectories
+    const subdirs: string[] = [];
+    for (const entry of entries) {
+        if (!entry.isDirectory() || skipDirs.has(entry.name)) {
+            continue;
+        }
+        const subPlan = path.join(dir, entry.name, 'PLAN.md');
+        if (fs.existsSync(subPlan)) {
+            return subPlan;
+        }
+        subdirs.push(path.join(dir, entry.name));
+    }
+
+    // Second pass: recurse into subdirectories if depth remains
+    if (remainingDepth > 1) {
+        for (const subdir of subdirs) {
+            const result = searchDirectory(subdir, remainingDepth - 1);
+            if (result) {
+                return result;
             }
         }
-    } catch {
-        // Ignore errors reading directory
     }
 
     return undefined;

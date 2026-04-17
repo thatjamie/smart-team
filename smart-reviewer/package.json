@@ -108,6 +108,14 @@
           "description": "AI provider for code review analysis",
           "order": 1
         },
+        "smart-reviewer.planSearchMaxDepth": {
+          "type": "number",
+          "default": 3,
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Max subdirectory depth to search for PLAN.md (0 = workspace root only)",
+          "order": 2
+        },
         "smart-reviewer.anthropicBaseUrl": {
           "type": "string",
           "default": "",

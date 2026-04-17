@@ -29,9 +29,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
             return undefined;
         }
 
+        const config = vscode.workspace.getConfiguration('smart-reviewer');
+        const maxDepth = config.get<number>('planSearchMaxDepth', 3);
+
         // Check each workspace folder for PLAN.md
         for (const folder of workspaceFolders) {
-            const found = findPlanFile(folder.uri.fsPath);
+            const found = findPlanFile(folder.uri.fsPath, maxDepth);
             if (found) {
                 return path.dirname(found);
             }
