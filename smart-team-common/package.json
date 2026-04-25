@@ -4,6 +4,7 @@
   "description": "Shared types, AI providers, parsers, writers, git operations, and diff utilities for the Smart Team VSCode extensions",
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
+  "files": ["out", "src"],
   "scripts": {
     "compile": "tsc",
     "watch": "tsc -watch"

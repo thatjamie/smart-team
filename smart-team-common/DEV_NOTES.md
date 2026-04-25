@@ -21,3 +21,6 @@
 
 ## Questions for reviewer
 - None
+
+## Review feedback addressed (iteration 2)
+- **Missing `files` field in package.json**: Added `"files": ["out", "src"]` to whitelist only the compiled output and source when the package is consumed. This prevents unnecessary files from being included via `file:` protocol or `npm link`.
