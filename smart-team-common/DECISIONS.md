@@ -31,3 +31,19 @@
   - **Context**: VSCode's `LanguageModelChatRequestOptions` has `modelOptions?: Record<string, any>` for provider-specific settings, not a typed `maxTokens` field
   - **Rationale**: Matches the actual `@types/vscode` API surface
   - **Date**: 2025-04-25
+
+## Step 3: Parsers
+- **Decision**: `parsePlan` returns Plan with empty steps on error instead of throwing
+  - **Context**: Plan said parsers should return undefined/[] for missing files; planParser is special because it's the entry point
+  - **Rationale**: Consumers can check `steps.length === 0` to detect failure; avoids null-checking on the Plan object itself
+  - **Date**: 2025-04-25
+
+- **Decision**: Only `##` headings are treated as steps; `###` and deeper are sub-sections
+  - **Context**: PLAN.md uses both `## Step N: Title` and `### Requirements`, `### Implementation Notes` etc.
+  - **Rationale**: Steps map to `##` headings as specified in PLAN; sub-sections belong to their parent step's content
+  - **Date**: 2025-04-25
+
+- **Decision**: `findPlanFile` checks for PLAN.md at current directory before enqueuing subdirectories (BFS)
+  - **Context**: Plan specified "breadth-first recursive search"
+  - **Rationale**: BFS ensures we find the shallowest PLAN.md first, which is most likely the correct one
+  - **Date**: 2025-04-25

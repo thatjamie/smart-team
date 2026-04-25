@@ -1,8 +1,8 @@
 /**
  * Barrel export for smart-team-common.
  *
- * Exports types, AI providers. Will be expanded in later steps to include
- * parsers, writers, git operations, and diff viewer.
+ * Exports types, AI providers, and parsers. Will be expanded in later steps
+ * to include writers, git operations, and diff viewer.
  */
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -31,3 +31,11 @@ export { CopilotProvider } from './ai/copilotProvider';
 export { AnthropicProvider } from './ai/anthropicProvider';
 export { OpenAIProvider } from './ai/openaiProvider';
 export { ProviderFactory } from './ai/providerFactory';
+
+// ─── Parsers ───────────────────────────────────────────────────────────────────
+
+export { parsePlan, findPlanFile } from './parsers/planParser';
+export { parseProgress } from './parsers/progressParser';
+export { parseDevNotes } from './parsers/devNotesParser';
+export { parseReviewFeedback } from './parsers/reviewFeedbackParser';
+export { parseDecisions } from './parsers/decisionsParser';
