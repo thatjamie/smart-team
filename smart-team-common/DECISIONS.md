@@ -47,3 +47,14 @@
   - **Context**: Plan specified "breadth-first recursive search"
   - **Rationale**: BFS ensures we find the shallowest PLAN.md first, which is most likely the correct one
   - **Date**: 2025-04-25
+
+## Step 4: Writers
+- **Decision**: `updateProgressStep` and `updateLastAction` are pure functions returning new Progress objects
+  - **Context**: Plan didn't specify mutability semantics
+  - **Rationale**: Immutable updates prevent accidental mutation of shared state; callers can chain updates then write once
+  - **Date**: 2025-04-25
+
+- **Decision**: `appendDecision` creates the file with a header if it doesn't exist
+  - **Context**: Plan asked dev-agent to decide this
+  - **Rationale**: Simplifies caller code — no need to check file existence before first append
+  - **Date**: 2025-04-25
