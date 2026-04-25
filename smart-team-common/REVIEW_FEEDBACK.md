@@ -2,34 +2,22 @@
 
 ## Summary
 
-Step 1 is cleanly implemented and fully meets all PLAN.md requirements. The project scaffold is correct, all 15 shared types (1 enum + 14 interfaces) are properly defined with JSDoc, the barrel export is well-structured, and TypeScript compiles with zero errors. One minor improvement is needed before final approval.
+Step 1 iteration 2 addresses the sole change request from iteration 1. The `files` field has been correctly added to `package.json`. TypeScript still compiles with zero errors. All original requirements remain satisfied. Ready to approve.
 
 ## ✅ Approved Items
 
-- **package.json**: Correct name (`smart-team-common`), version (`0.1.0`), main/types entry points, compile/watch scripts, all required devDependencies (`@types/vscode`, `@types/node`, `typescript`), and peerDependencies with sensible `peerDependenciesMeta` marking them optional
-- **tsconfig.json**: Target ES2022, module commonjs, strict mode, declaration + declarationMap + sourceMap all enabled, correct include/exclude patterns
-- **.gitignore**: Excludes `node_modules/` and `out/` as required
-- **src/types.ts**: All 15 types match the PLAN.md specification exactly:
-  - `StepStatus` enum (Pending, InProgress, Complete)
-  - `Step`, `Plan` interfaces for plan parsing
-  - `ProgressStepEntry`, `ProgressLastAction`, `Progress` for progress tracking
-  - `WorktreeInfo` for git worktree info
-  - `ChangesRequiredItem`, `ReviewFeedback` for review feedback
-  - `Decision` for decisions log
-  - `DevNotes` for developer notes
-  - `AiMessage`, `AiResponse`, `AiChatOptions`, `AiProvider` for AI provider abstraction
-- **src/index.ts**: Clean barrel export re-exporting all types, with helpful comment noting it will expand in later steps
-- **JSDoc**: Every exported enum value, interface, and property has JSDoc comments
-- **Compilation**: `npm run compile` produces zero errors, generates correct `.d.ts` declarations with all 15 types exported
-- **DECISIONS.md**: Properly logged with 3 decisions, each with context, rationale, and date
-- **No runtime dependencies**: Package has zero regular `dependencies`, using only peer + dev deps as specified
+- **package.json**: Correct name, version, main/types paths, compile/watch scripts, devDependencies, peerDependencies with optional metadata, and now includes `"files": ["out", "src"]`
+- **tsconfig.json**: Target ES2022, module commonjs, strict mode, declaration + declarationMap + sourceMap, correct include/exclude
+- **.gitignore**: Excludes `node_modules/` and `out/`
+- **src/types.ts**: All 15 types (1 enum + 14 interfaces) match PLAN.md spec exactly with full JSDoc
+- **src/index.ts**: Clean barrel export re-exporting all types
+- **Compilation**: `npm run compile` produces zero errors
+- **DECISIONS.md**: Properly logged with 3 decisions
+- **No runtime dependencies**: Only peer + dev deps
 
 ## ❌ Changes Required
 
-- [ ] **Missing `files` field in package.json**: Add a `"files"` field to `package.json` to whitelist only `out/` and `src/` when the package is consumed. This prevents `.gitignore`, `tsconfig.json`, test files, and other non-essential files from being included when consumers install via `file:` protocol or `npm link`. Add:
-  ```json
-  "files": ["out", "src"]
-  ```
+None.
 
 ## 💡 Suggestions (Optional)
 
@@ -40,5 +28,5 @@ None.
 None.
 
 ## Iteration
-- Iteration: 1/5
-- Status: CHANGES_REQUIRED
+- Iteration: 2/5
+- Status: APPROVED

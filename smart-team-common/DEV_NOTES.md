@@ -1,26 +1,26 @@
-# Dev Notes — Step 1: Project Scaffold and Types
+# Dev Notes — Step 2: AI Provider Implementations
 
 ## What was implemented
-- Created `package.json` as a local npm package with proper peer dependencies (optional) and dev dependencies
-- Created `tsconfig.json` targeting ES2022/CommonJS with strict mode, declarations, and source maps
-- Created `.gitignore` excluding `node_modules/` and `out/`
-- Defined all 15 shared types in `src/types.ts` (1 enum + 14 interfaces)
-- Created `src/index.ts` barrel export re-exporting all types
+- `CopilotProvider` — VSCode Language Model API provider using `vscode.lm.selectChatModels()` and `LanguageModelChat.sendRequest()`
+- `AnthropicProvider` — Anthropic API (Claude) provider with system message separation and streaming
+- `OpenAIProvider` — OpenAI API (GPT) provider with streaming and usage capture
+- `ProviderFactory` — Factory that reads `aiProvider` config from a namespace parameter
+- `provider.ts` — Re-exports AI type interfaces from `types.ts` for convenience
+- Updated `src/index.ts` barrel to export all 4 provider classes
 
 ## Files changed
-- `smart-team-common/package.json` — NPM package manifest with no runtime dependencies
-- `smart-team-common/tsconfig.json` — TypeScript compiler config
-- `smart-team-common/.gitignore` — Git exclusions
-- `smart-team-common/src/types.ts` — All shared types (StepStatus, Step, Plan, Progress, WorktreeInfo, ReviewFeedback, Decision, DevNotes, AiMessage, AiResponse, AiChatOptions, AiProvider)
-- `smart-team-common/src/index.ts` — Barrel export
+- `smart-team-common/src/ai/provider.ts` — Re-exports AI type interfaces (AiMessage, AiResponse, AiChatOptions, AiProvider)
+- `smart-team-common/src/ai/copilotProvider.ts` — CopilotProvider class using VSCode LM API
+- `smart-team-common/src/ai/anthropicProvider.ts` — AnthropicProvider class with dynamic SDK loading
+- `smart-team-common/src/ai/openaiProvider.ts` — OpenAIProvider class with dynamic SDK loading
+- `smart-team-common/src/ai/providerFactory.ts` — ProviderFactory with namespace-based config
+- `smart-team-common/src/index.ts` — Expanded barrel export with AI providers
 
 ## Decisions made
-- **Peer deps are optional**: Added `peerDependenciesMeta` to mark `@anthropic-ai/sdk` and `openai` as optional so consumers that only use one provider don't get warnings
-- **`@types/node` included**: Added as devDependency since git operations (Step 5) will need `child_process` types and it's standard for Node.js packages
-- **AI interfaces in types.ts**: Kept AiMessage/AiResponse/AiChatOptions/AiProvider in `src/types.ts` as specified in the PLAN rather than a separate `ai/provider.ts`, since they're purely type definitions with no runtime code
+- **Dynamic require for peer deps**: Anthropic and OpenAI SDKs loaded via `require()` at call time, not at import time. This allows the package to compile without the optional peer dependencies installed, and defers the error to runtime with a descriptive message if the SDK is missing.
+- **CopilotProvider receives `vscode.lm` in constructor**: As specified in PLAN, the provider is instantiated with the `vscode.lm` namespace passed by the consumer.
+- **Copilot response parsing**: VSCode LM API uses `response.stream` (async iterable of `LanguageModelTextPart`/`LanguageModelToolCallPart`), not `response.text`. Usage info is not available from the VSCode LM API in the current `@types/vscode@1.90.0`.
+- **`modelOptions` instead of `maxTokens`**: VSCode's `LanguageModelChatRequestOptions` uses `modelOptions?: Record<string, any>` for provider-specific options, not a direct `maxTokens` property.
 
 ## Questions for reviewer
 - None
-
-## Review feedback addressed (iteration 2)
-- **Missing `files` field in package.json**: Added `"files": ["out", "src"]` to whitelist only the compiled output and source when the package is consumed. This prevents unnecessary files from being included via `file:` protocol or `npm link`.
