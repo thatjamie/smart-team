@@ -92,7 +92,7 @@ function extractSectionText(content: string, heading: string): string {
  */
 function extractSectionContent(content: string, headingRegex: RegExp): string | undefined {
     const regex = new RegExp(
-        `${headingRegex.source}\\s*\\n([\\s\\S]*?)(?=^##\\s|$(?!\\n))`,
+        `${headingRegex.source}.*\\n([\\s\\S]*?)(?=^##\\s|$(?!\\n))`,
         'm'
     );
     const match = content.match(regex);
