@@ -1,17 +1,31 @@
-# Review Feedback — Step 4: Writers
+# Review Feedback — Step 5: Git Operations
 
 ## Summary
 
-Step 4 iteration 2 fixes the `appendDecision` ordering bug from iteration 1. All 4 writers now round-trip correctly with the parser counterparts. Compilation clean. Ready to approve.
+Step 5 implements all git read and write operations exactly as specified in PLAN.md. Clean code, comprehensive JSDoc, zero compilation errors, all acceptance criteria met. Ready to approve.
 
 ## ✅ Approved Items
 
-- **`appendDecision` ordering fixed**: Now appends at the end of the step section (before next `##` heading or EOF) instead of inserting immediately after the step heading. Round-trip verified: "Used X" → "Used Z" → "Used V" preserves correct order ✅
-- **`progressWriter.ts`**: All 4 functions, pure immutable updates, round-trip verified ✅
-- **`devNotesWriter.ts`**: All sections including optional feedback, round-trip verified ✅
-- **`reviewFeedbackWriter.ts`**: Checkbox format, "None." fallback, round-trip verified ✅
-- **`src/index.ts`**: All 7 writer functions exported
+- **`execGit`**: Uses `spawnSync` with no shell execution, 10MB max buffer, 30s timeout. Throws on non-zero exit code, with descriptive error messages including stderr ✅
+- **`isDirectory`**: Safe helper with try/catch ✅
+- **`getProjectRoot`**: Returns `undefined` on error ✅
+- **`getProjectName`**: Simple `path.basename` wrapper ✅
+- **`findDevWorktree`**: Returns `WorktreeInfo` with `exists: false` when worktree directory is missing. Gets branch name when worktree exists ✅
+- **`getDiff`**: Tries triple-dot (`base...HEAD`) first, falls back to double-dot (`base..HEAD`), returns empty string on error ✅
+- **`getLatestDiff`**: `HEAD~1..HEAD`, returns empty string on error ✅
+- **`guessBaseBranch`**: Checks local refs first (`main`/`master`), then remote refs ✅
+- **`getCurrentBranch`**: Returns empty string on error ✅
+- **`getLatestCommit`**: Returns short 7-char hash ✅
+- **`createDevWorktree`**: Idempotent — checks for existing directory before creating. Uses `git worktree add -b` ✅
+- **`hasUncommittedChanges`**: Uses `git status --porcelain` ✅
+- **`commitChanges`**: Stages all (`git add -A`), commits, returns 7-char hash ✅
+- **`removeWorktree`**: Simple `git worktree remove` ✅
+- **All read operations return empty string/undefined on error**: No thrown exceptions ✅
+- **All functions use `spawnSync` with no shell execution**: `shell` option not set (defaults to false) ✅
+- **`src/index.ts`**: Barrel export expanded with all 14 git functions (10 read + 4 write) ✅
 - **Compilation**: `npm run compile` produces zero errors
+- **DECISIONS.md**: 2 decisions logged for Step 5 with context and rationale
+- **JSDoc**: Every exported function has thorough documentation
 
 ## ❌ Changes Required
 
@@ -26,5 +40,5 @@ None.
 None.
 
 ## Iteration
-- Iteration: 2/5
+- Iteration: 1/5
 - Status: APPROVED

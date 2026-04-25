@@ -2,7 +2,7 @@
  * Barrel export for smart-team-common.
  *
  * Exports types, AI providers, parsers, writers, and git operations.
- * Will be expanded in later steps to include diff viewer.
+ * Exports types, AI providers, parsers, writers, git operations, and diff viewer.
  */
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -51,3 +51,7 @@ export { writeReviewFeedback } from './writers/reviewFeedbackWriter';
 
 export { execGit, isDirectory, getProjectRoot, getProjectName, findDevWorktree, getDiff, getLatestDiff, guessBaseBranch, getCurrentBranch, getLatestCommit } from './git/gitRead';
 export { createDevWorktree, hasUncommittedChanges, commitChanges, removeWorktree } from './git/gitWrite';
+
+// ─── Diff Viewer ───────────────────────────────────────────────────────────────
+
+export { getDiffForStep, openDiffEditor } from './diffViewer';
