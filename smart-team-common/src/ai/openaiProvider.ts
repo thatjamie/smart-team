@@ -27,7 +27,7 @@ export class OpenAIProvider implements AiProvider {
 
     /** @inheritdoc */
     async chat(messages: AiMessage[], options?: AiChatOptions): Promise<AiResponse> {
-        const OpenAI = await this.loadSdk();
+        const OpenAI = this.loadSdk();
         const client = new OpenAI.default({
             apiKey: this.apiKey,
             ...(this.baseUrl ? { baseURL: this.baseUrl } : {}),
@@ -56,7 +56,7 @@ export class OpenAIProvider implements AiProvider {
         onChunk: (text: string) => void,
         options?: AiChatOptions
     ): Promise<AiResponse> {
-        const OpenAI = await this.loadSdk();
+        const OpenAI = this.loadSdk();
         const client = new OpenAI.default({
             apiKey: this.apiKey,
             ...(this.baseUrl ? { baseURL: this.baseUrl } : {}),
@@ -71,8 +71,8 @@ export class OpenAIProvider implements AiProvider {
         });
 
         let text = '';
-        let inputTokens = 0;
-        let outputTokens = 0;
+        let usageInputTokens: number | undefined;
+        let usageOutputTokens: number | undefined;
 
         for await (const chunk of stream) {
             const delta = chunk.choices[0]?.delta?.content;
@@ -83,14 +83,16 @@ export class OpenAIProvider implements AiProvider {
 
             // Capture usage from the final chunk when available
             if (chunk.usage) {
-                inputTokens = chunk.usage.prompt_tokens;
-                outputTokens = chunk.usage.completion_tokens;
+                usageInputTokens = chunk.usage.prompt_tokens;
+                usageOutputTokens = chunk.usage.completion_tokens;
             }
         }
 
         return {
             text,
-            usage: { inputTokens, outputTokens },
+            usage: usageInputTokens !== undefined && usageOutputTokens !== undefined
+                ? { inputTokens: usageInputTokens, outputTokens: usageOutputTokens }
+                : undefined,
         };
     }
 
@@ -99,7 +101,7 @@ export class OpenAIProvider implements AiProvider {
      * @throws Error if the SDK is not installed.
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private async loadSdk(): Promise<any> {
+    private loadSdk(): any {
         try {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             return require('openai');

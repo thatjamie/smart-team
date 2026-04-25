@@ -28,7 +28,7 @@ export class AnthropicProvider implements AiProvider {
 
     /** @inheritdoc */
     async chat(messages: AiMessage[], options?: AiChatOptions): Promise<AiResponse> {
-        const Anthropic = await this.loadSdk();
+        const Anthropic = this.loadSdk();
         const client = new Anthropic.default({
             apiKey: this.apiKey,
             ...(this.baseUrl ? { baseURL: this.baseUrl } : {}),
@@ -65,7 +65,7 @@ export class AnthropicProvider implements AiProvider {
         onChunk: (text: string) => void,
         options?: AiChatOptions
     ): Promise<AiResponse> {
-        const Anthropic = await this.loadSdk();
+        const Anthropic = this.loadSdk();
         const client = new Anthropic.default({
             apiKey: this.apiKey,
             ...(this.baseUrl ? { baseURL: this.baseUrl } : {}),
@@ -82,8 +82,6 @@ export class AnthropicProvider implements AiProvider {
         } as any);
 
         let text = '';
-        let inputTokens = 0;
-        let outputTokens = 0;
 
         stream.on('text', (chunk: string) => {
             text += chunk;
@@ -92,14 +90,16 @@ export class AnthropicProvider implements AiProvider {
 
         const finalMessage = await stream.finalMessage();
 
-        if (finalMessage.usage) {
-            inputTokens = (finalMessage.usage as { input_tokens: number }).input_tokens;
-            outputTokens = (finalMessage.usage as { output_tokens: number }).output_tokens;
-        }
+        const usage = finalMessage.usage
+            ? {
+                inputTokens: (finalMessage.usage as { input_tokens: number }).input_tokens,
+                outputTokens: (finalMessage.usage as { output_tokens: number }).output_tokens,
+            }
+            : undefined;
 
         return {
             text,
-            usage: { inputTokens, outputTokens },
+            usage,
         };
     }
 
@@ -108,7 +108,7 @@ export class AnthropicProvider implements AiProvider {
      * @throws Error if the SDK is not installed.
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private async loadSdk(): Promise<any> {
+    private loadSdk(): any {
         try {
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             return require('@anthropic-ai/sdk');

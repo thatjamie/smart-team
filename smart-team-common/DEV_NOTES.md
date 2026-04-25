@@ -24,3 +24,7 @@
 
 ## Questions for reviewer
 - None
+
+## Review feedback addressed (iteration 2)
+- **`loadSdk()` was async but used sync `require()`**: Removed `async` and `Promise<any>` return type. Changed to synchronous `loadSdk(): any`. Removed `await` from all callers in both `anthropicProvider.ts` and `openaiProvider.ts`.
+- **Streaming usage defaults to `{ inputTokens: 0, outputTokens: 0 }` instead of `undefined`**: Fixed both providers. `stream()` now returns `usage: undefined` when no usage data is available, consistent with `chat()` methods and the optional `AiResponse.usage` type contract.
