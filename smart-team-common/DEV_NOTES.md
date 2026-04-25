@@ -25,3 +25,6 @@
 
 ## Questions for reviewer
 - None
+
+## Review feedback addressed (iteration 2)
+- **BUG: `planParser.ts` step extraction too loose**: Fixed `extractSteps()` to strictly match only `## Step N: Title` pattern headings using regex `^##\s+Step\s+\d+[:.]\s+(.+)$`. This prevents false positives from non-step sections (`## Overview`, `## Context`, `## References`) and headings inside markdown code blocks. Code blocks are now stripped before regex matching. Step content now correctly includes all `###` sub-sections since boundaries are only at `## Step N:` headings. Verified: parses the actual PLAN.md as exactly **7 steps** with full content.

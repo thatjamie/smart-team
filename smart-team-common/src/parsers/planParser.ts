@@ -114,30 +114,36 @@ function derivePlanName(planFilePath: string, content?: string): string {
 }
 
 /**
- * Extract steps from PLAN.md content by splitting on `##` headings.
- * Skips the top-level `#` heading (plan title).
+ * Extract steps from PLAN.md content by splitting on `## Step N:` headings.
+ *
+ * Only headings matching the pattern `## Step N: Title` or `## Step N. Title`
+ * are treated as step boundaries. All content between consecutive step
+ * headings (including `###` sub-sections) is captured as the step content.
+ * Headings inside markdown code blocks are ignored.
  */
 function extractSteps(content: string): Array<{ title: string; level: number; content: string }> {
     const steps: Array<{ title: string; level: number; content: string }> = [];
 
-    // Match all headings: capture level (# count) and title
-    const headingRegex = /^(#{2,})\s+(.+)$/gm;
-    const matches: Array<{ index: number; level: number; title: string }> = [];
+    // Remove markdown code blocks to avoid matching headings inside examples
+    const stripped = content.replace(/```[\s\S]*?```/g, '');
+
+    // Only match "## Step N: Title" or "## Step N. Title" headings
+    const stepRegex = /^##\s+Step\s+\d+[:.]\s+(.+)$/gm;
+    const matches: Array<{ index: number; title: string }> = [];
 
     let match: RegExpExecArray | null;
-    while ((match = headingRegex.exec(content)) !== null) {
+    while ((match = stepRegex.exec(stripped)) !== null) {
         matches.push({
             index: match.index,
-            level: match[1].length,
-            title: match[2].trim(),
+            title: match[1].trim(),
         });
     }
 
-    // Extract content between consecutive headings
+    // Extract all content between consecutive step headings (including ### sub-sections)
     for (let i = 0; i < matches.length; i++) {
         const start = matches[i].index;
-        const end = i + 1 < matches.length ? matches[i + 1].index : content.length;
-        const fullSection = content.substring(start, end);
+        const end = i + 1 < matches.length ? matches[i + 1].index : stripped.length;
+        const fullSection = stripped.substring(start, end);
 
         // Remove the heading line itself to get just the content
         const headingLineEnd = fullSection.indexOf('\n');
@@ -145,15 +151,11 @@ function extractSteps(content: string): Array<{ title: string; level: number; co
             ? fullSection.substring(headingLineEnd + 1).trim()
             : '';
 
-        // Only include ## level headings as steps (level 2)
-        // Deeper headings (###, ####) are sub-sections within a step
-        if (matches[i].level === 2) {
-            steps.push({
-                title: matches[i].title,
-                level: matches[i].level,
-                content: stepContent,
-            });
-        }
+        steps.push({
+            title: matches[i].title,
+            level: 2,
+            content: stepContent,
+        });
     }
 
     return steps;
