@@ -15,3 +15,8 @@
   - **Context**: Full activation wiring is Step 6; Step 1 only needs a valid entry point
   - **Rationale**: Keeps step boundaries clear; the stub compiles and loads without errors
   - **Date**: 2025-04-25
+
+- **Decision**: `.vscodeignore` uses `src/**` + negation pattern — revisit in Step 6
+  - **Context**: Current pattern excludes `src/**` but whitelists `src/extension.ts` and `src/types.ts`
+  - **Rationale**: Works for Step 1's file set but will need updating as Steps 2–6 add new modules. Since only `out/` is needed at runtime in the packaged extension, consider simplifying to just `src/` exclusion in Step 6 when `npx vsce package` is tested
+  - **Date**: 2025-04-25

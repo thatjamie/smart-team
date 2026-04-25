@@ -24,5 +24,5 @@
 - Added `.planner-state.json` to `.gitignore` since it's runtime state, not source code
 - `.vscodeignore` excludes most of `src/` but keeps `src/extension.ts` and `src/types.ts` for source map support in packaged extension
 
-## Questions for reviewer
-- The `.vscodeignore` pattern `src/**` followed by `!src/extension.ts` may exclude future source files needed in the package — is this acceptable or should we only ship `out/`?
+## Review feedback addressed (iteration 2)
+- **Issue 1**: Added `.vscodeignore` packaging concern to `DECISIONS.md` — the reviewer correctly noted that `DEV_NOTES.md` is overwritten between steps, so this decision needs to persist in `DECISIONS.md` for Step 6 awareness. Added as a new decision entry with plan to revisit during `npx vsce package` testing.
