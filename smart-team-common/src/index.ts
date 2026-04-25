@@ -1,8 +1,8 @@
 /**
  * Barrel export for smart-team-common.
  *
- * Exports types, AI providers, parsers, and writers. Will be expanded in
- * to include writers, git operations, and diff viewer.
+ * Exports types, AI providers, parsers, writers, and git operations.
+ * Will be expanded in later steps to include diff viewer.
  */
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -46,3 +46,8 @@ export { writeProgress, updateProgressStep, updateLastAction, initProgress } fro
 export { writeDevNotes } from './writers/devNotesWriter';
 export { appendDecision } from './writers/decisionsWriter';
 export { writeReviewFeedback } from './writers/reviewFeedbackWriter';
+
+// ─── Git Operations ────────────────────────────────────────────────────────────
+
+export { execGit, isDirectory, getProjectRoot, getProjectName, findDevWorktree, getDiff, getLatestDiff, guessBaseBranch, getCurrentBranch, getLatestCommit } from './git/gitRead';
+export { createDevWorktree, hasUncommittedChanges, commitChanges, removeWorktree } from './git/gitWrite';

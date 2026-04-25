@@ -1,27 +1,21 @@
-# Dev Notes — Step 4: Writers
+# Dev Notes — Step 5: Git Operations
 
 ## What was implemented
-- `progressWriter.ts` — `writeProgress`, `updateProgressStep`, `updateLastAction`, `initProgress`
-- `devNotesWriter.ts` — `writeDevNotes` with all sections including optional feedback sections
-- `decisionsWriter.ts` — `appendDecision` (never overwrites, creates file if missing)
-- `reviewFeedbackWriter.ts` — `writeReviewFeedback` with exact format matching parser
-- Updated `src/index.ts` barrel to export all 7 writer functions
+- `gitRead.ts` — 10 read-only git functions: `execGit`, `isDirectory`, `getProjectRoot`, `getProjectName`, `findDevWorktree`, `getDiff`, `getLatestDiff`, `guessBaseBranch`, `getCurrentBranch`, `getLatestCommit`
+- `gitWrite.ts` — 4 write git functions: `createDevWorktree`, `hasUncommittedChanges`, `commitChanges`, `removeWorktree`
+- Updated `src/index.ts` barrel to export all 14 git functions
 
 ## Files changed
-- `smart-team-common/src/writers/progressWriter.ts` — Progress writer (147 lines)
-- `smart-team-common/src/writers/devNotesWriter.ts` — Dev notes writer (83 lines)
-- `smart-team-common/src/writers/decisionsWriter.ts` — Decisions writer (96 lines)
-- `smart-team-common/src/writers/reviewFeedbackWriter.ts` — Review feedback writer (74 lines)
-- `smart-team-common/src/index.ts` — Added writer exports
+- `smart-team-common/src/git/gitRead.ts` — Read-only git operations (218 lines)
+- `smart-team-common/src/git/gitWrite.ts` — Write git operations (87 lines)
+- `smart-team-common/src/index.ts` — Added git operation exports
 
 ## Decisions made
-- **`updateProgressStep` and `updateLastAction` return new Progress objects** — they don't mutate the input, consistent with immutable update patterns
-- **`appendDecision` creates file if missing** — writes header + first entry; otherwise appends under existing step heading or creates new step section
-- **Writers use `fs.writeFileSync`** — synchronous, consistent with the parsers
-- **Round-trip verified** for all 4 writer→parser pairs: Progress, DevNotes, ReviewFeedback, Decisions
+- **`execGit` and `isDirectory` kept in `gitRead.ts`** — shared helpers used by both files; exporting them keeps `gitWrite.ts` simple without a separate shared module
+- **`execGit` throws on non-zero exit** — callers wrap in try/catch for error-tolerant read ops; write ops let errors propagate
+- **All read operations return empty string or undefined on error** — no thrown exceptions per acceptance criteria
+- **`createDevWorktree` is idempotent** — checks for existing directory before creating
+- **`getDiff` tries triple-dot first** (`base...HEAD`), falls back to double-dot (`base..HEAD`) on error
 
 ## Questions for reviewer
 - None
-
-## Review feedback addressed (iteration 2)
-- **BUG: `appendDecision` inserts at wrong position — reverses decision order**: Fixed by finding the end of the step section (next `##` heading or EOF) instead of inserting immediately after the step heading. Now appends new decisions at the bottom of their step section, preserving chronological order. Verified: appending X → Z → A (different step) → W produces `Used X -> Used Z -> Used W` in Step 1.

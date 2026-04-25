@@ -58,3 +58,14 @@
   - **Context**: Plan asked dev-agent to decide this
   - **Rationale**: Simplifies caller code — no need to check file existence before first append
   - **Date**: 2025-04-25
+
+## Step 5: Git Operations
+- **Decision**: `execGit` and `isDirectory` kept in `gitRead.ts` as shared helpers
+  - **Context**: Plan asked whether to separate into own file
+  - **Rationale**: Both files need these helpers; a separate file adds complexity for 2 functions. Exporting from gitRead.ts keeps gitWrite.ts clean.
+  - **Date**: 2025-04-25
+
+- **Decision**: `execGit` throws on non-zero exit code; read ops catch internally
+  - **Context**: Plan specified "no thrown exceptions" for read operations
+  - **Rationale**: Keeps `execGit` simple and testable; each read function wraps in try/catch to return safe defaults. Write ops intentionally let errors propagate.
+  - **Date**: 2025-04-25
