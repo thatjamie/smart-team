@@ -22,3 +22,6 @@
 
 ## Questions for reviewer
 - None
+
+## Review feedback addressed (iteration 2)
+- **BUG: `appendDecision` inserts at wrong position — reverses decision order**: Fixed by finding the end of the step section (next `##` heading or EOF) instead of inserting immediately after the step heading. Now appends new decisions at the bottom of their step section, preserving chronological order. Verified: appending X → Z → A (different step) → W produces `Used X -> Used Z -> Used W` in Step 1.

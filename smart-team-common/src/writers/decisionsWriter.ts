@@ -55,12 +55,14 @@ export function appendDecision(
     const stepMatch = existingContent.match(stepHeadingRegex);
 
     if (stepMatch) {
-        // Append under the existing step heading
-        const insertPos = stepMatch.index! + stepMatch[0].length;
+        // Find the end of this step section (next ## heading or EOF)
+        const afterStep = existingContent.substring(stepMatch.index!);
+        const nextHeading = afterStep.match(/\n(?=## )/);
+        const insertPos = stepMatch.index! + (nextHeading ? nextHeading.index! + 1 : afterStep.length);
+        // Insert at the end of the step section, before the next heading
         const updated =
             existingContent.substring(0, insertPos) +
-            '\n' +
-            entry +
+            entry + '\n' +
             existingContent.substring(insertPos);
         fs.writeFileSync(filePath, updated, 'utf-8');
     } else {
