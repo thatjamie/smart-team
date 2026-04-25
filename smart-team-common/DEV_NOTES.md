@@ -28,3 +28,6 @@
 
 ## Review feedback addressed (iteration 2)
 - **BUG: `planParser.ts` step extraction too loose**: Fixed `extractSteps()` to strictly match only `## Step N: Title` pattern headings using regex `^##\s+Step\s+\d+[:.]\s+(.+)$`. This prevents false positives from non-step sections (`## Overview`, `## Context`, `## References`) and headings inside markdown code blocks. Code blocks are now stripped before regex matching. Step content now correctly includes all `###` sub-sections since boundaries are only at `## Step N:` headings. Verified: parses the actual PLAN.md as exactly **7 steps** with full content.
+
+## Review feedback addressed (iteration 3)
+- **Missing plan context**: Added `context: string` field to `Plan` interface in `src/types.ts`. Modified `extractSteps()` to return `{ context, steps }` where `context` captures all content before the first `## Step N:` heading (Overview, Context, Tech Stack, References, etc.). Updated `parsePlan()` return paths to include `context`. Verified: actual PLAN.md produces 2935 chars of context including Overview and Context sections.

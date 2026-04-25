@@ -18,7 +18,7 @@ export function parsePlan(planFilePath: string, progressOverrides?: Progress): P
     try {
         const content = fs.readFileSync(planFilePath, 'utf-8');
         const name = derivePlanName(planFilePath, content);
-        const rawSteps = extractSteps(content);
+        const { context, steps: rawSteps } = extractSteps(content);
 
         const steps: Step[] = rawSteps.map((raw, index) => {
             const progressEntry = progressOverrides?.steps[index];
@@ -33,11 +33,12 @@ export function parsePlan(planFilePath: string, progressOverrides?: Progress): P
             };
         });
 
-        return { name, filePath: planFilePath, steps };
+        return { name, filePath: planFilePath, context, steps };
     } catch {
         return {
             name: derivePlanName(planFilePath),
             filePath: planFilePath,
+            context: '',
             steps: [],
         };
     }
@@ -114,14 +115,13 @@ function derivePlanName(planFilePath: string, content?: string): string {
 }
 
 /**
- * Extract steps from PLAN.md content by splitting on `## Step N:` headings.
+ * Extract steps and plan context from PLAN.md content.
  *
  * Only headings matching the pattern `## Step N: Title` or `## Step N. Title`
- * are treated as step boundaries. All content between consecutive step
- * headings (including `###` sub-sections) is captured as the step content.
- * Headings inside markdown code blocks are ignored.
+ * are treated as step boundaries. All content before the first step heading
+ * is captured as `context`. Headings inside markdown code blocks are ignored.
  */
-function extractSteps(content: string): Array<{ title: string; level: number; content: string }> {
+function extractSteps(content: string): { context: string; steps: Array<{ title: string; level: number; content: string }> } {
     const steps: Array<{ title: string; level: number; content: string }> = [];
 
     // Remove markdown code blocks to avoid matching headings inside examples
@@ -138,6 +138,11 @@ function extractSteps(content: string): Array<{ title: string; level: number; co
             title: match[1].trim(),
         });
     }
+
+    // Extract context: all content before the first step heading
+    const context = matches.length > 0
+        ? stripped.substring(0, matches[0].index).trim()
+        : stripped.trim();
 
     // Extract all content between consecutive step headings (including ### sub-sections)
     for (let i = 0; i < matches.length; i++) {
@@ -158,5 +163,5 @@ function extractSteps(content: string): Array<{ title: string; level: number; co
         });
     }
 
-    return steps;
+    return { context, steps };
 }

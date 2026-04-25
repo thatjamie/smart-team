@@ -33,6 +33,8 @@ export interface Plan {
     name: string;
     /** Absolute path to PLAN.md */
     filePath: string;
+    /** All content before the first step heading (Overview, Context, Tech Stack, etc.) */
+    context: string;
     /** Parsed steps from the plan */
     steps: Step[];
 }
