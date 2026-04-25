@@ -1,0 +1,139 @@
+{
+  "name": "smart-planner",
+  "displayName": "Smart Planner",
+  "description": "AI planning agent that creates structured implementation plans through interactive interviews",
+  "version": "0.1.0",
+  "publisher": "smart-team",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Chat",
+    "Planning"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "icon": "media/icon.svg",
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "smart-planner",
+        "name": "smart-planner",
+        "description": "AI planning agent that creates structured implementation plans",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "plan",
+            "description": "Start planning for a project (optionally specify project root path)"
+          },
+          {
+            "name": "update",
+            "description": "Update an existing PLAN.md with new requirements"
+          },
+          {
+            "name": "status",
+            "description": "Show current interview/plan status"
+          }
+        ]
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "smart-planner",
+          "title": "Smart Planner",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "smart-planner": [
+        {
+          "id": "smart-planner-overview",
+          "name": "Plan Overview",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "smart-planner.startPlanning",
+        "title": "Smart Planner: Start Planning"
+      },
+      {
+        "command": "smart-planner.updatePlan",
+        "title": "Smart Planner: Update Plan"
+      },
+      {
+        "command": "smart-planner.openProjectRoot",
+        "title": "Smart Planner: Open Project Root"
+      },
+      {
+        "command": "smart-planner.refresh",
+        "title": "Smart Planner: Refresh"
+      },
+      {
+        "command": "smart-planner.settings",
+        "title": "Smart Planner: Settings"
+      }
+    ],
+    "configuration": {
+      "title": "Smart Planner",
+      "properties": {
+        "smart-planner.aiProvider": {
+          "type": "string",
+          "enum": [
+            "copilot",
+            "anthropic",
+            "openai"
+          ],
+          "default": "copilot",
+          "description": "AI provider to use for plan generation"
+        },
+        "smart-planner.projectRoot": {
+          "type": "string",
+          "default": "",
+          "description": "Project root directory (empty means use workspace root)"
+        },
+        "smart-planner.anthropicBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Custom base URL for Anthropic API"
+        },
+        "smart-planner.anthropicModel": {
+          "type": "string",
+          "default": "claude-sonnet-4-20250514",
+          "description": "Anthropic model to use"
+        },
+        "smart-planner.openaiBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Custom base URL for OpenAI API"
+        },
+        "smart-planner.openaiModel": {
+          "type": "string",
+          "default": "gpt-4o",
+          "description": "OpenAI model to use"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc",
+    "watch": "tsc -watch",
+    "package": "npx vsce package"
+  },
+  "dependencies": {
+    "smart-team-common": "file:../smart-team-common",
+    "@anthropic-ai/sdk": "^0.30.0",
+    "openai": "^4.52.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0"
+  }
+}
