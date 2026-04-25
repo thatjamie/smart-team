@@ -404,7 +404,7 @@ State file location: `<projectRoot>/.planner-state.json` — persisted across VS
 ### Requirements
 
 - Write PLAN.md with the exact structure that dev-agent and review-agent expect
-- Seed PROGRESS.md after plan is finalized (using the standard format from common)
+- Seed PROGRESS.md after plan is finalized (using `initProgress` from common's `progressWriter`)
 - Validate that the generated plan has all required sections before writing
 
 ### Implementation Notes
@@ -416,11 +416,11 @@ State file location: `<projectRoot>/.planner-state.json` — persisted across VS
   - Basic validation: check for `## Step` headings, `**Goal:**` lines, `### Acceptance Criteria` sections
   - If validation fails, log warnings but still write (AI might produce slightly different formatting)
 
-- `seedProgress(projectRoot: string, planFilePath: string)` → `void`
+- `seedProgress(projectRoot: string, planFilePath: string, planName: string, branch: string)` → `void`
   - Parse the written PLAN.md using `parsePlan` from common
-  - Extract step titles
-  - Use `writeProgress` from common to create PROGRESS.md with all steps as ⏳ Pending
-  - Set Last Action to "Plan created and PROGRESS.md seeded"
+  - Extract step titles from the parsed `Plan.steps`
+  - Use `initProgress` from common's `progressWriter` to create PROGRESS.md with all steps as ⏳ Pending, setting planName, branch, and step labels
+  - Set Last Action to "Plan created and PROGRESS.md seeded" via `updateLastAction` from common's `progressWriter`
 
 - `parsePlanFromAiOutput(aiText: string)` → `string | undefined`
   - Extract the plan content from AI response (the AI outputs the full PLAN.md markdown)
@@ -472,7 +472,12 @@ State file location: `<projectRoot>/.planner-state.json` — persisted across VS
 
 ### Implementation Notes
 
-All flows use shared modules from `smart-team-common`.
+All flows use shared modules from `smart-team-common`:
+- **AI provider**: `ProviderFactory.create(secrets, 'smart-planner')` from common's `providerFactory` — creates the AI provider based on `smart-planner.aiProvider` setting
+- **Parsers**: `parsePlan` and `findPlanFile` from common's `planParser`, `parseProgress` from common's `progressParser`
+- **Writers**: `initProgress` and `updateLastAction` from common's `progressWriter`
+
+The chat handler creates the AI provider once on first request (via `ProviderFactory.create(secrets, 'smart-planner')`) and reuses it for all subsequent AI calls within the session.
 
 **`/plan [path]` flow**:
 
@@ -508,7 +513,7 @@ All flows use shared modules from `smart-team-common`.
 **`/update` flow**:
 1. Find existing PLAN.md in project root
 2. Parse existing plan using common's `parsePlan`
-3. Parse existing PROGRESS.md (if exists) to know step statuses
+3. Parse existing PROGRESS.md (if exists) using common's `parseProgress` to know step statuses
 4. Build plan update prompt with existing plan, progress, and user's new requirements
 5. AI redrafts affected steps
 6. User reviews → iterate → finalize
@@ -537,6 +542,7 @@ All flows use shared modules from `smart-team-common`.
 
 - [ ] `/plan` with no argument uses workspace root as project root
 - [ ] `/plan /path/to/project` uses the specified path
+- [ ] AI provider is created via `ProviderFactory.create(secrets, 'smart-planner')` from common
 - [ ] `/plan` explores codebase and starts interview with 2-4 questions
 - [ ] Interview persists across chat turns (ask question → user answers → next questions)
 - [ ] After interview, AI generates full PLAN.md content
@@ -545,10 +551,11 @@ All flows use shared modules from `smart-team-common`.
 - [ ] PROGRESS.md has all steps as ⏳ Pending with correct titles
 - [ ] `.planner-state.json` is created during interview and cleared on finalize
 - [ ] Resuming an interrupted session loads previous state correctly
-- [ ] `/update` reads existing PLAN.md and modifies it
+- [ ] `/update` reads existing PLAN.md using common's `parsePlan` and modifies it
+- [ ] `/update` reads PROGRESS.md using common's `parseProgress` to respect step statuses
 - [ ] `/update` respects completed/in-progress/pending step states
 - [ ] `/status` shows current phase, project root, and interview progress
-- [ ] Error cases (invalid path, no workspace, corrupted state) show clear messages
+- [ ] Error cases (invalid path, no workspace, corrupted state, AI provider error) show clear messages
 
 ### Dev-Agent Decisions
 

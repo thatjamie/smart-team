@@ -2,19 +2,22 @@
 
 ## Overview
 
-A shared npm package providing common types, AI providers, markdown parsers/writers, git operations, and diff utilities used by both the **Smart Developer** and **Smart Reviewer** VSCode extensions. This package contains ~60% of the codebase shared between the two extensions, ensuring consistent behavior for shared state files (`PROGRESS.md`, `DEV_NOTES.md`, `DECISIONS.md`, `REVIEW_FEEDBACK.md`).
+A shared npm package providing common types, AI providers, markdown parsers/writers, git operations, and diff utilities used by the **Smart Planner**, **Smart Developer**, and **Smart Reviewer** VSCode extensions. This package contains the shared code across all three extensions, ensuring consistent behavior for shared state files (`PLAN.md`, `PROGRESS.md`, `DEV_NOTES.md`, `DECISIONS.md`, `REVIEW_FEEDBACK.md`).
 
 ## Context
 
 ### Existing System
 
-The `smart-team` monorepo contains two VSCode extensions:
+The `smart-team` monorepo contains three VSCode extensions:
+- **Smart Planner** (`../smart-planner/`) — AI plan-agent that creates PLAN.md from user interviews
 - **Smart Developer** (`../smart-developer/`) — AI dev-agent that implements code from `PLAN.md`
 - **Smart Reviewer** (`../smart-reviewer/`) — AI review-agent that reviews code against `PLAN.md`
 
-Both extensions share the same state file formats, AI provider abstractions, parsers, writers, and git operations. This package extracts the shared code into a single source of truth.
+All three extensions share the same state file formats, AI provider abstractions, and most parsers/writers. This package extracts the shared code into a single source of truth.
 
-**Consumers**: This package is consumed by both extensions as a local npm dependency (`"smart-team-common": "file:../smart-team-common"`).
+**Consumers**: This package is consumed by all three extensions as a local npm dependency (`"smart-team-common": "file:../smart-team-common"`).
+
+**Note**: Smart Planner uses a subset of common (types, AI providers, planParser, progressParser, progressWriter) but does NOT use git operations, diff viewer, devNotesWriter, decisionsWriter, or reviewFeedbackWriter.
 
 ### Tech Stack
 
@@ -37,6 +40,7 @@ Both extensions share the same state file formats, AI provider abstractions, par
 
 ### References
 
+- Smart Planner plan: `../smart-planner/PLAN.md`
 - Smart Developer plan: `../smart-developer/PLAN.md`
 - Smart Reviewer plan: `../smart-reviewer/PLAN.md`
 - VSCode Language Model API: https://code.visualstudio.com/api/extension-guides/language-model
