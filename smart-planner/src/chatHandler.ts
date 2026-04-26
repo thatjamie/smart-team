@@ -59,6 +59,11 @@ export class ChatHandler {
                 case 'status':
                     await this.handleStatus(request, response);
                     break;
+                case undefined:
+                    // No slash command — this is a continuation of an active session.
+                    // Route to the active planning session's current phase.
+                    await this.handleContinuation(request, response, token);
+                    break;
                 default:
                     response.markdown('Unknown command. Use `/plan`, `/update`, or `/status`.');
             }
@@ -76,6 +81,40 @@ export class ChatHandler {
             this.aiProvider = await ProviderFactory.create(this.secretStorage, 'smart-planner');
         }
         return this.aiProvider;
+    }
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // Continuation handler (no slash command — user is answering/continuing)
+    // ────────────────────────────────────────────────────────────────────────────
+
+    private async handleContinuation(
+        request: vscode.ChatRequest,
+        response: vscode.ChatResponseStream,
+        token: vscode.CancellationToken
+    ): Promise<void> {
+        const projectRoot = resolveProjectRoot('');
+        if (!projectRoot) {
+            response.markdown('Please open a workspace or use `/plan /path/to/project` to start.');
+            return;
+        }
+
+        const state = loadState(projectRoot);
+        if (!state || state.phase === 'idle' || state.phase === 'finalized') {
+            response.markdown('No active planning session. Use `/plan` to start a new session.');
+            return;
+        }
+
+        // Route to the current phase with the user's message
+        const userMessage = request.prompt.trim();
+        if (!userMessage) {
+            response.markdown(`Current phase: **${state.phase}**. Please provide your input, or use \`/status\` to see details.`);
+            return;
+        }
+
+        let updatedState = await this.routeByPhase(state, userMessage, response, token);
+        if (updatedState) {
+            saveState(updatedState);
+        }
     }
 
     // ────────────────────────────────────────────────────────────────────────────

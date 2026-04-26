@@ -150,6 +150,7 @@
     "@types/node": "^20.14.0",
     "@types/vscode": "^1.90.0",
     "esbuild": "^0.28.0",
+    "sharp": "^0.34.5",
     "smart-team-common": "file:../smart-team-common",
     "typescript": "^5.5.0"
   }

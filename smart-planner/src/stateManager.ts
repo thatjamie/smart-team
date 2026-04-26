@@ -153,7 +153,6 @@ export function addInterviewQA(
             ...state.interviewQA,
             { question, answer, round },
         ],
-        interviewRound: Math.max(state.interviewRound, round),
         lastActivity: new Date().toISOString(),
     };
 }
