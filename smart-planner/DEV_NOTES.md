@@ -29,5 +29,7 @@
 - `/update` is single-turn (not multi-turn) — simpler UX, user provides all changes in one message
 - `/plan` with no argument + no workspace shows error message — forces explicit project root
 
-## Questions for reviewer
-- None
+## Review feedback addressed (iteration 2)
+- **Issue 1**: Replaced all inline `require('fs')` and `require('path')` with proper ES module `import * as fs from 'fs'` and `import * as path from 'path'` at the top of the file — consistent with the rest of the codebase (`codebaseExplorer.ts`, `stateManager.ts`, `planWriter.ts`)
+- **Issue 2**: `parseProgress` is now actually used in the `/update` handler — it parses PROGRESS.md into structured step statuses and formats them as a summary (e.g., "Step 1: ✅ Complete") for the AI prompt, ensuring status-aware updates per acceptance criteria item 13
+- **Suggestion (optional)**: Replaced `'Previous question'` placeholder with actual question extraction from AI responses. Added `pendingQuestions` field to `PlannerState` and `extractQuestions()` helper function. Questions are extracted via regex patterns (numbered `1. **Question?**`, bold `**Question?**`, lines ending with `?`) and stored in state. On the next user turn, answers are paired with the stored questions. This makes `.planner-state.json` data meaningful for the sidebar (Step 6) and improves interview history quality.

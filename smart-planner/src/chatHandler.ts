@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 import { ProviderFactory } from 'smart-team-common';
 import { parsePlan, findPlanFile } from 'smart-team-common';
 import { parseProgress } from 'smart-team-common';
@@ -171,11 +173,19 @@ export class ChatHandler {
         response: vscode.ChatResponseStream,
         token: vscode.CancellationToken
     ): Promise<PlannerState> {
-        // If there's a user message, it's an answer to a previous question
-        if (userMessage) {
-            // Record the answer — the question was asked in the previous turn
+        // If there's a user message and pending questions, record the Q&A pairs
+        if (userMessage && state.pendingQuestions.length > 0) {
             const round = state.interviewRound + 1;
-            state = addInterviewQA(state, 'Previous question', userMessage, round);
+            // Store user's answer against the pending questions
+            for (const question of state.pendingQuestions) {
+                state = addInterviewQA(state, question, userMessage, round);
+            }
+            // Clear pending questions after recording
+            state = { ...state, pendingQuestions: [], lastActivity: new Date().toISOString() };
+        } else if (userMessage) {
+            // No pending questions — user is providing initial intent or freeform input
+            const round = state.interviewRound + 1;
+            state = addInterviewQA(state, 'User input', userMessage, round);
         }
 
         // Check if we've exceeded max interview rounds
@@ -212,8 +222,16 @@ export class ChatHandler {
         // Show the AI's questions
         response.markdown(aiText);
 
-        // Increment round
-        state = { ...state, interviewRound: state.interviewRound + 1, lastActivity: new Date().toISOString() };
+        // Extract questions from AI response and store as pending
+        const extractedQuestions = extractQuestions(aiText);
+
+        // Increment round and store pending questions
+        state = {
+            ...state,
+            interviewRound: state.interviewRound + 1,
+            pendingQuestions: extractedQuestions,
+            lastActivity: new Date().toISOString(),
+        };
         return state;
     }
 
@@ -398,12 +416,23 @@ export class ChatHandler {
         let existingProgressContent: string | undefined;
 
         try {
-            existingPlanContent = require('fs').readFileSync(planFilePath, 'utf-8');
+            existingPlanContent = fs.readFileSync(planFilePath, 'utf-8');
         } catch { /* ignore */ }
 
-        const progressPath = require('path').join(projectRoot, 'PROGRESS.md');
+        const progressPath = path.join(projectRoot, 'PROGRESS.md');
         try {
-            existingProgressContent = require('fs').readFileSync(progressPath, 'utf-8');
+            existingProgressContent = fs.readFileSync(progressPath, 'utf-8');
+        } catch { /* ignore */ }
+
+        // Parse progress to extract structured step statuses for the prompt
+        let progressSummary: string | undefined;
+        try {
+            const progress = parseProgress(progressPath);
+            if (progress) {
+                progressSummary = progress.steps
+                    .map(s => `- ${s.label}: ${s.status === 'complete' ? '✅ Complete' : s.status === 'in-progress' ? '🔄 In Progress' : '⏳ Pending'}`)
+                    .join('\n');
+            }
         } catch { /* ignore */ }
 
         // Build update context
@@ -412,7 +441,7 @@ export class ChatHandler {
             interviewQA: [],
             phase: 'reviewing',
             existingPlan: existingPlanContent,
-            existingProgress: existingProgressContent,
+            existingProgress: progressSummary ?? existingProgressContent,
         };
 
         const systemPrompt = buildPlanUpdatePrompt(context);
@@ -514,7 +543,6 @@ function resolveProjectRoot(chatArgument: string): string | undefined {
  */
 function isDirectory(filePath: string): boolean {
     try {
-        const fs = require('fs');
         return fs.existsSync(filePath) && fs.statSync(filePath).isDirectory();
     } catch {
         return false;
@@ -525,8 +553,6 @@ function isDirectory(filePath: string): boolean {
  * Check if a directory has source code (not empty/greenfield).
  */
 function hasSourceCode(projectRoot: string): boolean {
-    const fs = require('fs');
-    const path = require('path');
     const indicators = ['package.json', 'Cargo.toml', 'pyproject.toml', 'go.mod', 'pom.xml', 'Gemfile', 'composer.json', 'src', 'lib', 'app'];
     try {
         const entries = fs.readdirSync(projectRoot);
@@ -613,4 +639,65 @@ function formatCodebaseOverview(summary: import('./types').CodebaseSummary): str
 
     parts.push('\n');
     return parts.join('\n');
+}
+
+/**
+ * Extract questions from AI interview response text.
+ *
+ * Looks for common question patterns:
+ * - Numbered questions: "1. **Question text?**" or "1. Question text?"
+ * - Bold questions: "**Question text?**"
+ * - Lines ending with "?"
+ *
+ * Returns the extracted question strings, or a fallback summary if none found.
+ */
+function extractQuestions(aiText: string): string[] {
+    const questions: string[] = [];
+    const lines = aiText.split('\n');
+
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) { continue; }
+
+        // Match numbered questions: "1. **What...?**" or "1. What...?"
+        const numberedMatch = trimmed.match(/^\d+[\.\)]\s+\*\*(.+?\?)\*\*/);
+        if (numberedMatch) {
+            questions.push(numberedMatch[1]);
+            continue;
+        }
+
+        // Match numbered without bold: "1. What...?"
+        const numberedPlainMatch = trimmed.match(/^\d+[\.\)]\s+(.+?\?)\s*$/);
+        if (numberedPlainMatch) {
+            questions.push(numberedPlainMatch[1]);
+            continue;
+        }
+
+        // Match bold questions: "**What...?**"
+        const boldMatch = trimmed.match(/^\*\*(.+?\?)\*\*/);
+        if (boldMatch) {
+            questions.push(boldMatch[1]);
+            continue;
+        }
+    }
+
+    // Fallback: if no structured questions found, use the first line that ends with "?"
+    if (questions.length === 0) {
+        for (const line of lines) {
+            const trimmed = line.trim().replace(/\*\*/g, '');
+            if (trimmed.endsWith('?') && trimmed.length > 10) {
+                questions.push(trimmed);
+            }
+        }
+    }
+
+    // If still nothing, store a summary of the AI response as the "question"
+    if (questions.length === 0) {
+        const summaryLine = lines.find(l => l.trim().length > 0);
+        if (summaryLine) {
+            questions.push(summaryLine.trim().substring(0, 200));
+        }
+    }
+
+    return questions;
 }

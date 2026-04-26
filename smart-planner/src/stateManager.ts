@@ -103,6 +103,7 @@ export function createInitialState(
         isGreenfield,
         interviewQA: [],
         interviewRound: 0,
+        pendingQuestions: [],
         lastActivity: new Date().toISOString(),
     };
 }

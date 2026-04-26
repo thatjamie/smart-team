@@ -36,6 +36,8 @@ export interface PlannerState {
     interviewQA: InterviewQA[];
     /** Number of interview rounds completed */
     interviewRound: number;
+    /** AI-generated questions from the last turn, awaiting user answers */
+    pendingQuestions: string[];
     /** Draft plan content (if any) */
     draftPlan?: string;
     /** Path to the generated PLAN.md */
