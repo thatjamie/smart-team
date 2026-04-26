@@ -1,46 +1,54 @@
-# Review Feedback — Step 5: Chat Handler
+# Review Feedback — Step 6: Sidebar and Extension Activation
 
 ## Summary
 
-All review feedback across 3 iterations has been addressed. The chat handler implements a comprehensive multi-turn state machine for `/plan`, `/update`, and `/status` commands with proper ES module imports, structured `parseProgress` usage, question tracking, and backwards-compatible state loading. **No blocking issues remain.**
+Step 6 is the final step and it's well-implemented. The sidebar tree provider is clean and well-organized, the extension activation wiring correctly registers all components, the `.vscodeignore` concern from Step 1 has been resolved, and a comprehensive README was added. All acceptance criteria that can be verified statically are met. **No blocking issues.**
 
 ## ✅ Approved Items
 
-- **`/plan` flow**: Full 5-phase state machine (exploring → interviewing → drafting → reviewing → finalized)
-  - ✅ Project root resolution: chat argument → VSCode setting → workspace root
-  - ✅ Greenfield detection, codebase exploration, formatted overview
-  - ✅ Multi-turn interviewing with `[REQUIREMENTS_CLEAR]` signal detection
-  - ✅ Max 8 interview rounds safety limit
-  - ✅ Drafting with `parsePlanFromAiOutput` extraction
-  - ✅ Reviewing with keyword-based approval detection (11 keywords)
-  - ✅ Finalized: writes PLAN.md + seeds PROGRESS.md + clears state
-  - ✅ Resume support: loads `.planner-state.json`, continues from saved phase
+- **`src/providers/plannerTreeProvider.ts`** (292 lines): Clean tree data provider with 3-section layout:
+  - ✅ **Session info** (expanded): project root, greenfield/brownfield, question count, pending questions, last activity with relative timestamps
+  - ✅ **Interview history** (collapsed): grouped by round, each round expands to Q&A pairs
+  - ✅ **Plan outline** (collapsed): step titles extracted from draft plan with phase-appropriate icons (📄/👁️/✅)
+  - ✅ Empty state: "No active planning session" + "Use /plan to start planning"
+  - ✅ `setProjectRoot()` and `refresh()` for external updates
+  - ✅ Helper functions: `formatPhaseLabel`, `formatTimestamp` (relative), `truncate`
 
-- **`/update` flow**: Reads PLAN.md via `findPlanFile`, parses PROGRESS.md via `parseProgress` for status-aware updates, builds update prompt with structured step statuses
+- **`src/extension.ts`** (130 lines): Complete activation wiring:
+  - ✅ Project root resolution: VSCode setting → workspace root
+  - ✅ `ChatHandler` creation and chat participant registration
+  - ✅ `PlannerTreeProvider` creation and TreeView registration (`smart-planner-overview`)
+  - ✅ 5 commands registered: `startPlanning`, `updatePlan`, `openProjectRoot` (folder picker), `refresh`, `settings`
+  - ✅ File watcher for `.planner-state.json` using `vscode.RelativePattern` (scoped to project root)
+  - ✅ Configuration change listener for `smart-planner.projectRoot`
+  - ✅ All disposables pushed to `context.subscriptions`
+  - ✅ `deactivate()` cleans up via subscriptions
 
-- **`/status` flow**: Shows phase, project root, intent, interview round, question count, draft status
+- **`.vscodeignore`** (resolved from Step 1):
+  - ✅ Simplified to `src/**` (excludes all source) — no more negation whitelisting
+  - ✅ `*.md` excludes all markdown except `!README.md`
+  - ✅ `media/icon.svg` included automatically via `package.json` reference
 
-- **Code quality**:
-  - ✅ ES module imports throughout (no `require()` calls)
-  - ✅ `parseProgress` properly used in `/update` handler
-  - ✅ Question tracking via `extractQuestions()` + `pendingQuestions` field
-  - ✅ `loadState()` defaults `pendingQuestions` to `[]` for backwards compatibility **(fixed in iteration 3)**
+- **`README.md`**: Comprehensive user documentation with Quick Start, settings table, commands, sidebar description, pipeline diagram, resume support, and greenfield/brownfield explanation
+
+- **`DECISIONS.md`**: 5 decisions for Step 6 plus Step 1 `.vscodeignore` resolution updated ✅
 
 - **Compile**: `npm run compile` produces zero errors ✅
-- **DECISIONS.md**: 3 decisions properly documented ✅
 
 ## ❌ Changes Required
 
-None — all issues addressed across 3 iterations.
+None — all requirements are met.
 
 ## 💡 Suggestions (Optional)
 
-None.
+- **Packaging test**: The plan says to verify `npx vsce package` produces a `.vsix` under 5MB. This is a runtime/manual test that can't be verified in a static code review. Consider running `npx vsce package` to verify the `.vsix` builds cleanly before merging.
+
+- **End-to-end manual testing**: The plan lists 8 manual test scenarios. These require a running VSCode Extension Development Host and AI provider credentials. Recommend testing with at least the Copilot provider before release.
 
 ## ❓ Questions
 
 None.
 
 ## Iteration
-- Iteration: 3/5
+- Iteration: 1/5
 - Status: APPROVED
