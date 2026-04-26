@@ -1,58 +1,64 @@
-# Review Feedback — Step 1: Extension Scaffold
+# Review Feedback — Step 2: System Prompts
 
 ## Summary
 
-Step 1 is fully implemented and all review feedback from iteration 1 has been addressed. All required files are present, `npm run compile` passes with zero errors, and `DECISIONS.md` is now complete with all 4 decisions properly documented. **No blocking issues remain.**
+Step 2 is well-implemented. All three prompt files are present, compile cleanly, and encode the plan-agent knowledge thoroughly. All 9 acceptance criteria from the plan are met. One minor cleanup item — an unnecessary re-export in `planUpdatePrompt.ts` that should be removed.
 
 ## ✅ Approved Items
 
-- **package.json**: Complete extension manifest with all required contributions:
-  - ✅ Chat participant (`smart-planner`) with `isSticky: true` and all 3 commands (`/plan`, `/update`, `/status`)
-  - ✅ Activity bar container (`smart-planner`) with clipboard icon
-  - ✅ TreeView (`smart-planner-overview`) for interview progress and plan outline
-  - ✅ All 5 palette commands (`startPlanning`, `updatePlan`, `openProjectRoot`, `refresh`, `settings`)
-  - ✅ All 6 configuration properties with correct types, enums, and defaults
-  - ✅ Dependencies: `smart-team-common` (file link), `@anthropic-ai/sdk ^0.30.0`, `openai ^4.52.0`
-  - ✅ Dev dependencies: `@types/vscode ^1.90.0`, `@types/node ^20.14.0`, `typescript ^5.5.0`
-  - ✅ Engines: `vscode ^1.90.0`
-  - ✅ Build scripts: `compile`, `watch`, `package`, `vscode:prepublish`
+- **`src/prompts/interviewPrompt.ts`**: Complete interview + exploration prompt:
+  - ✅ Role definition: "senior architect and technical planner"
+  - ✅ Codebase exploration guidance with 7 analysis dimensions (project structure, tech stack, frameworks, entry points, conventions, testing, build tools)
+  - ✅ Interview technique: 2-4 focused questions, prioritize by impact, don't ask inferable things, one topic per question, provide context
+  - ✅ 8 key areas to probe (scope, behavior, data model, integration, non-functional, patterns, migration, priority)
+  - ✅ Requirements evolution handling (acknowledge → assess → integrate → flag)
+  - ✅ Output format (summarize → ask → note assumptions)
+  - ✅ `[REQUIREMENTS_CLEAR]` signal for phase transition
+  - ✅ Phase-aware output (`exploring` vs `interviewing`)
+  - ✅ Codebase summary formatting with all CodebaseSummary fields
+  - ✅ Interview history grouped by round (matches DECISIONS.md)
 
-- **tsconfig.json**: Correct configuration — `target: ES2022`, `module: commonjs`, `strict: true`, `outDir: ./out`, `rootDir: ./src`, matching common package conventions
+- **`src/prompts/planGenerationPrompt.ts`**: Complete plan generation prompt:
+  - ✅ Role definition: "generating a PLAN.md consumed by automated agents"
+  - ✅ Exact PLAN.md template with all required sections (Overview, Context with subsections, Steps with Goal/Requirements/Notes/Files/Criteria/Decisions)
+  - ✅ 6 step design principles (duration, coherent unit, requirements count, dependency ordering, clear boundaries, self-contained)
+  - ✅ 4 step patterns (Foundation first, Vertical slice, Scaffold then fill, Interface first)
+  - ✅ Testing reminders (auto-test guidance, user verification, test framework integration)
+  - ✅ 16-item quality checklist (expanded from plan's 13 — more thorough, all items are valid)
+  - ✅ `[PLAN_START]`/`[PLAN_END]` output markers
+  - ✅ Codebase and interview data formatted for drafting context
 
-- **src/extension.ts**: Clean activate/deactivate stubs with JSDoc comments. Appropriate for Step 1 (full wiring deferred to Step 6 as planned)
-
-- **src/types.ts**: All planner-specific types match the plan spec exactly:
-  - ✅ `PlannerPhase` union type with all 6 phases
-  - ✅ `PlannerState` interface with all 10 fields
-  - ✅ `CodebaseSummary` interface with all 9 fields
-  - ✅ `InterviewQA` interface with all 3 fields
-  - ✅ `PlannerContext` interface with all 6 fields
-  - ✅ Re-exports from `smart-team-common` — `StepStatus` as value export, all others as `type` exports (correct since `StepStatus` is an enum)
-
-- **media/icon.svg**: Clipboard with checklist design — valid SVG, appropriate for the planner
-
-- **.gitignore**: Correctly excludes `node_modules/`, `out/`, `*.vsix`, `.planner-state.json`
+- **`src/prompts/planUpdatePrompt.ts`**: Complete plan update prompt:
+  - ✅ Update rules per step status: Completed (don't modify), In-Progress (discuss first), Pending (modify freely)
+  - ✅ 5-step update process (analyze → categorize → plan → present → update PROGRESS.md)
+  - ✅ Change presentation format with structured summary template
+  - ✅ 9-item quality checklist for updated plans
+  - ✅ `[PLAN_START]`/`[PLAN_END]` + `[PROGRESS_START]`/`[PROGRESS_END]` output markers
+  - ✅ Existing plan and progress sections included when present
 
 - **Compile**: `npm run compile` produces zero errors ✅
 
-- **DECISIONS.md**: Properly populated with all 4 decisions for Step 1:
-  - ✅ Re-export common types using `type` exports only
-  - ✅ Added `.planner-state.json` to `.gitignore`
-  - ✅ Used minimal activate stub with info message
-  - ✅ `.vscodeignore` uses `src/**` + negation pattern — revisit in Step 6 **(addressed in iteration 2)**
+- **DECISIONS.md**: 3 decisions properly documented for Step 2:
+  - ✅ No few-shot examples (token efficiency rationale)
+  - ✅ Group interview history by round
+  - ✅ Plan update prompt outputs both PLAN.md and PROGRESS.md
 
 ## ❌ Changes Required
 
-None — all plan requirements are met and all review feedback has been addressed.
+- [ ] **Issue 1: Unnecessary `StepStatus` re-export in `planUpdatePrompt.ts`**
+  - **Location**: `src/prompts/planUpdatePrompt.ts` line 140
+  - **Current**: `export type { StepStatus };`
+  - **Problem**: This re-export is unused — nothing imports `StepStatus` from `planUpdatePrompt.ts`. The `StepStatus` type is already properly re-exported from `src/types.ts` (from Step 1). Having it in a prompt file is misleading about the file's responsibility and could confuse future developers.
+  - **Fix**: Remove `export type { StepStatus };` from line 140 and remove the `StepStatus` import from line 1 (change `import type { PlannerContext, StepStatus } from '../types';` to `import type { PlannerContext } from '../types';`)
 
 ## 💡 Suggestions (Optional)
 
-None.
+None — the prompts are thorough and well-structured.
 
 ## ❓ Questions
 
 None.
 
 ## Iteration
-- Iteration: 2/5
-- Status: APPROVED
+- Iteration: 1/5
+- Status: CHANGES_REQUIRED

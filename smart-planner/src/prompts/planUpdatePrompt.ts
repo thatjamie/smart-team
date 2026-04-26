@@ -1,4 +1,4 @@
-import type { PlannerContext, StepStatus } from '../types';
+import type { PlannerContext } from '../types';
 
 /**
  * Builds the system prompt for updating an existing plan.
@@ -135,6 +135,3 @@ function formatInterviewForUpdate(qa: import('../types').InterviewQA[]): string 
     }
     return output;
 }
-
-// Re-export StepStatus for consumers that need to check step states
-export type { StepStatus };

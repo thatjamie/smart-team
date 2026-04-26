@@ -17,5 +17,5 @@
 - Interview history in the interview prompt is grouped by round for clearer context flow
 - Plan update prompt includes PROGRESS.md output markers since updates may renumber steps
 
-## Questions for reviewer
-- None — the plan spec was very detailed and left little ambiguity
+## Review feedback addressed (iteration 2)
+- **Issue 1**: Removed unnecessary `StepStatus` re-export and import from `planUpdatePrompt.ts` — the type is already available via `src/types.ts`. The re-export in a prompt file was misleading about the file's responsibility.
