@@ -6,8 +6,8 @@
 
 | Step | Status | Iteration | Last Commit |
 |------|--------|-----------|-------------|
-| Step 1: Extension Scaffold | 🔄 In Progress | 3/5 | d5d67dd |
-| Step 2: System Prompt | ⏳ Pending | - | - |
+| Step 1: Extension Scaffold | ✅ Complete | 3/5 | d5d67dd |
+| Step 2: System Prompt | 🔄 In Progress | - | - |
 | Step 3: Context Builder and File Applier | ⏳ Pending | - | - |
 | Step 4: Sidebar TreeView | ⏳ Pending | - | - |
 | Step 5: Chat Handler | ⏳ Pending | - | - |
@@ -15,5 +15,5 @@
 
 ## Last Action
 - **Agent**: dev-agent
-- **Action**: Committed Step 1 iteration 3 — fixed PROGRESS.md Last Action section
-- **Timestamp**: 2025-04-26 20:03
+- **Action**: Committed Step 2, iteration 1
+- **Timestamp**: 2025-04-26 20:16

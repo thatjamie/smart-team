@@ -15,3 +15,19 @@
   - **Context**: `.vscodeignore` controls what ships in the packaged extension
   - **Rationale**: Compiled JS in `out/` is the runtime code. Keeping `extension.ts` and `types.ts` allows downstream type consumers to reference the source if needed
   - **Date**: 2025-04-26
+
+## Step 2: System Prompt
+- **Decision**: Use markdown headings (#, ##) for system prompt structure
+  - **Context**: System prompt needs clear sections for the AI to parse
+  - **Rationale**: Markdown headings are the most natural format for LLM consumption — they create clear visual and semantic boundaries between prompt sections
+  - **Date**: 2025-04-26
+
+- **Decision**: 9 core rules in the system prompt
+  - **Context**: AI needs explicit behavioral boundaries
+  - **Rationale**: Comprehensive rules covering step boundaries, conventions, output format, error handling, documentation, secrets, ambiguity resolution, and output-only-XML requirement leave minimal room for deviation
+  - **Date**: 2025-04-26
+
+- **Decision**: Conditional dynamic context sections
+  - **Context**: Not all context fields are always available (e.g., review feedback only for iterations > 1)
+  - **Rationale**: Including empty sections wastes tokens and could confuse the AI. Only non-empty context sections are injected into the prompt
+  - **Date**: 2025-04-26

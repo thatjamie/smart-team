@@ -1,26 +1,34 @@
 # Review Feedback — Step 1: Extension Scaffold
 
 ## Summary
-The dev addressed the `.vscodeignore` fix. Compilation still passes clean. However, the PROGRESS.md commit issue has recurred — the iteration 2 update is again uncommitted, showing the same pattern as iteration 1. One remaining fix needed.
+All previous issues resolved. PROGRESS.md is now properly committed alongside code changes. The working tree is clean. Step 1 fully meets all PLAN.md requirements.
 
 ## ✅ Approved Items
-- **`.vscodeignore` fix**: `**/*.tsbuildinfo` line correctly removed — no longer references files that are never generated.
-- **Compilation**: `npm run compile` still passes with zero errors.
-- **DEV_NOTES.md**: Well-documented feedback response section explaining what was accepted and acknowledged.
-- **All items from iteration 1 remain valid**: package.json, tsconfig.json, types.ts, extension.ts, icon.svg, .gitignore — all still correct.
+- **package.json**: Complete manifest — 4 chat commands, 6 palette commands, 6 settings, activity bar, tree view, correct dependencies. Matches PLAN.md exactly.
+- **tsconfig.json**: ES2022, commonjs, strict, declaration, sourceMap — correct.
+- **src/types.ts**: All 14 types re-exported from common (verified against barrel export). All 4 dev-specific types (FileChange, DecisionEntry, DevAction, DevContext) defined per spec with JSDoc.
+- **src/extension.ts**: Clean activate/deactivate stubs, deferred to Step 6.
+- **.gitignore**: Excludes node_modules/, out/, *.vsix.
+- **.vscodeignore**: Clean rules, no stale entries.
+- **media/icon.svg**: Valid SVG code-brackets icon.
+- **Compilation**: `npm run compile` passes with zero errors.
+- **smart-team-common**: Correctly linked via `file:../smart-team-common`.
+- **PROGRESS.md**: Properly committed at HEAD (`2c8ccd3`) with correct iteration (3/5), commit hash (`d5d67dd`), and Last Action.
+- **Working tree**: Clean — no uncommitted changes.
 
 ## ❌ Changes Required
 
-- [ ] **PROGRESS.md still not committed with dev's own update** (recurring from iteration 1): The committed PROGRESS.md at `4d36b08` shows `iteration 1/5, commit 996c567, Last Action: review-agent` — which is the state *I* wrote during my review. The dev-agent's own update (`iteration 2/5, commit 4d36b08, Last Action: dev-agent`) is sitting uncommitted in the working tree. The dev-agent must update PROGRESS.md **before committing** to reflect the current iteration, then include it in the commit. This is the same issue flagged in iteration 1. Please ensure the dev-agent's workflow is: (1) make code changes, (2) update PROGRESS.md to reflect the new iteration, (3) commit everything together.
+None.
 
 ## 💡 Suggestions (Optional)
 
-- The previous REVIEW_FEEDBACK.md was committed into git — this is fine for audit trail, just make sure it doesn't cause confusion. Future iterations will overwrite it.
+- Consider adding `"preview": true` to package.json for pre-release versioning.
+- Consider adding `package-lock.json` to `.vscodeignore` to reduce VSIX size.
 
 ## ❓ Questions
 
-- None.
+None.
 
 ## Iteration
-- Iteration: 2/5
-- Status: CHANGES_REQUIRED
+- Iteration: 3/5
+- Status: APPROVED

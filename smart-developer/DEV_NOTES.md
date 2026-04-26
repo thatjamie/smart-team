@@ -1,37 +1,23 @@
-# Dev Notes — Step 1: Extension Scaffold
+# Dev Notes — Step 2: System Prompt
 
 ## What was implemented
-- Complete VSCode extension manifest (`package.json`) with all contributions
-- TypeScript configuration matching smart-team-common conventions
-- Extension entry point with activate/deactivate stubs
-- Dev-agent-specific types re-exporting from common and defining FileChange, DecisionEntry, DevAction, DevContext
-- Build tooling (`.gitignore`, `.vscodeignore`)
-- Code/terminal SVG icon for activity bar
+- `buildDevSystemPrompt(context: DevContext): string` — builds the complete system prompt
+- Four prompt sections: Role, Core Rules, Output Format, Dynamic Context
+- XML output format contract exactly matching PLAN.md spec
+- Dynamic context injection for plan content, progress, decisions, review feedback, file tree, and existing files
 
 ## Files changed
-- `package.json` — Extension manifest with chat participant (4 commands), activity bar, tree view, 6 palette commands, 6 settings, dependencies
-- `tsconfig.json` — TypeScript config (ES2022, commonjs, strict, declaration, sourceMap)
-- `.gitignore` — Excludes node_modules/, out/, *.vsix
-- `.vscodeignore` — Clean VSIX packaging rules (removed `**/*.tsbuildinfo` — not generated)
-- `src/extension.ts` — Entry point with activate/deactivate stubs (full wiring deferred to Step 6)
-- `src/types.ts` — Re-exports all common types + defines FileChange, DecisionEntry, DevAction, DevContext
-- `media/icon.svg` — Code brackets icon for activity bar
-- `PROGRESS.md` — Updated to show Step 1 as 🔄 In Progress with commit hash
+- `src/prompts/devSystemPrompt.ts` — New file with system prompt builder function
 
 ## Decisions made
-- Icon: Used a simple code brackets (`< />`) SVG — clean, recognizable, works at all sizes
-- `.vscodeignore` keeps `out/` and `media/` but excludes source files except `extension.ts` and `types.ts` for type support
-- Extension uses `onStartupFinished` activation event for immediate availability
+- System prompt uses markdown headings (#, ##) for AI readability rather than flat text
+- Core rules include 9 explicit rules covering step boundaries, conventions, output format, error handling, JSDoc, and secrets
+- Dynamic context sections are conditionally included — only non-empty sections appear
+- Existing files are wrapped in markdown code fences within the prompt for clear delimiting
 
 ## Questions for reviewer
-- None — all requirements from Step 1 are clearly specified in PLAN.md
+- None
 
 ## Verification
-- `npm install` completed with 0 vulnerabilities (links smart-team-common via file: protocol)
-- `npm run compile` produces zero TypeScript errors
-- Output in `out/` directory confirmed with `.js`, `.d.ts`, and `.js.map` files
-
-## Review feedback addressed (iteration 2)
-- **PROGRESS.md not committed**: Accepted — PROGRESS.md update will now be committed alongside code changes. The previous commit left it uncommitted; this commit includes the updated PROGRESS.md.
-- **`.vscodeignore` has inaccurate `**/*.tsbuildinfo` line**: Accepted — removed the line since tsconfig does not set `composite` or `incremental`, so no `.tsbuildinfo` files are generated.
-- **`package-lock.json` in VSIX**: Acknowledged — reviewer flagged as "no action required". Left as-is for reproducibility.
+- `npm run compile` produces zero errors
+- Function signature matches PLAN.md: `buildDevSystemPrompt(context: DevContext): string`
