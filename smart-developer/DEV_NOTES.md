@@ -34,3 +34,4 @@
 - **`extractFileChanges` content not trimmed**: Accepted — added `.trim()` to `match[3]` in `extractFileChanges()` to prevent leading/trailing whitespace from XML formatting being written to files.
 - **`buildDevContext` doesn't guard against out-of-range `stepIndex`**: Accepted — added guard at top of function that throws `Error("Invalid step index ${stepIndex}: plan has ${plan.steps.length} steps.")` for invalid indices. Removed now-unnecessary ternary fallbacks.
 - **`parseDevResponse` should never throw** (suggestion): Accepted — wrapped entire function body in try/catch returning `undefined` on any error. This ensures robustness even if the AI produces malformed XML.
+- **`<decision>` attribute order assumption** (suggestion): Accepted — changed `extractDecisions` regex to capture all attributes as a string, then extract `context` and `rationale` individually using separate regex matches. This handles attributes in any order.

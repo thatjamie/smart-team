@@ -87,17 +87,23 @@ function extractFileChanges(xml: string): FileChange[] {
 
 /**
  * Extract all `<decision>` elements from the XML body.
+ *
+ * Handles attributes in any order (context before rationale or vice versa).
  */
 function extractDecisions(xml: string): DecisionEntry[] {
     const decisions: DecisionEntry[] = [];
-    const regex = /<decision\s+context="([^"]*)"\s+rationale="([^"]*)">([\s\S]*?)<\/decision>/g;
+    const regex = /<decision\s+([^>]*)>([\s\S]*?)<\/decision>/g;
 
     let match: RegExpExecArray | null;
     while ((match = regex.exec(xml)) !== null) {
+        const attrs = match[1];
+        const contextMatch = attrs.match(/context="([^"]*)"/);
+        const rationaleMatch = attrs.match(/rationale="([^"]*)"/);
+
         decisions.push({
-            decision: match[3].trim(),
-            context: match[1].trim(),
-            rationale: match[2].trim(),
+            decision: match[2].trim(),
+            context: contextMatch?.[1]?.trim() ?? '',
+            rationale: rationaleMatch?.[1]?.trim() ?? '',
         });
     }
 
