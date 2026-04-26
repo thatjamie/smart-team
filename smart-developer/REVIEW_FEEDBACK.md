@@ -1,39 +1,26 @@
 # Review Feedback — Step 1: Extension Scaffold
 
 ## Summary
-Solid implementation. All required files are present, the extension compiles cleanly, `smart-team-common` is linked correctly, and the re-exports match the common package's barrel export. A few minor issues to address before approval.
+The dev addressed the `.vscodeignore` fix. Compilation still passes clean. However, the PROGRESS.md commit issue has recurred — the iteration 2 update is again uncommitted, showing the same pattern as iteration 1. One remaining fix needed.
 
 ## ✅ Approved Items
-- **package.json**: Complete manifest with all 4 chat commands, 6 palette commands, 6 settings, activity bar, tree view, and correct dependencies. All match PLAN.md requirements exactly.
-- **tsconfig.json**: Correct target (ES2022), module (commonjs), strict mode, declaration, sourceMap — matches conventions.
-- **src/types.ts**: All 14 types re-exported from `smart-team-common` match the common package's barrel export. All 4 dev-specific interfaces (`FileChange`, `DecisionEntry`, `DevAction`, `DevContext`) defined exactly per PLAN.md spec with proper JSDoc.
-- **src/extension.ts**: Clean activate/deactivate stubs, properly deferred to Step 6.
-- **.gitignore**: Correctly excludes `node_modules/`, `out/`, `*.vsix`.
-- **media/icon.svg**: Valid SVG code-brackets icon (Lucide-style), appropriate for activity bar.
-- **Compilation**: `npm run compile` passes with zero errors.
-- **Dependency resolution**: `smart-team-common` correctly linked via `file:../smart-team-common`.
+- **`.vscodeignore` fix**: `**/*.tsbuildinfo` line correctly removed — no longer references files that are never generated.
+- **Compilation**: `npm run compile` still passes with zero errors.
+- **DEV_NOTES.md**: Well-documented feedback response section explaining what was accepted and acknowledged.
+- **All items from iteration 1 remain valid**: package.json, tsconfig.json, types.ts, extension.ts, icon.svg, .gitignore — all still correct.
 
 ## ❌ Changes Required
 
-- [ ] **PROGRESS.md not committed**: The dev-agent updated PROGRESS.md to show Step 1 as 🔄 In Progress with commit hash `996c567`, but this change was left uncommitted in the working tree. The committed PROGRESS.md still shows Step 1 as ⏳ Pending. The dev-agent should either:
-  - Commit PROGRESS.md alongside the code changes, OR
-  - Not include it in DEV_NOTES.md verification claims if it's intentionally left uncommitted
-  
-  Recommendation: Include PROGRESS.md in the commit so the git state is consistent with what DEV_NOTES.md describes.
-
-- [ ] **`.vscodeignore` excludes source maps but `tsconfig.json` generates them**: The `.vscodeignore` contains `**/*.map` which excludes `.js.map` files from the VSIX — this is fine for production. However, it also contains `**/*.tsbuildinfo` but `tsconfig.json` does not set `composite: true` or `incremental: true`, so no `.tsbuildinfo` files are actually generated. This is a minor inconsistency but not harmful. **Please remove the `**/*.tsbuildinfo` line** to keep the ignore file accurate.
-
-- [ ] **`package-lock.json` included in commit but not in `.vscodeignore`**: The `package-lock.json` (542 lines) was committed. This is fine for reproducibility. However, note that `vsce` will include it in the VSIX by default unless explicitly ignored. Consider adding `package-lock.json` to `.vscodeignore` if you want a smaller VSIX, or leave it as-is. **No action required** — just flagging for awareness.
+- [ ] **PROGRESS.md still not committed with dev's own update** (recurring from iteration 1): The committed PROGRESS.md at `4d36b08` shows `iteration 1/5, commit 996c567, Last Action: review-agent` — which is the state *I* wrote during my review. The dev-agent's own update (`iteration 2/5, commit 4d36b08, Last Action: dev-agent`) is sitting uncommitted in the working tree. The dev-agent must update PROGRESS.md **before committing** to reflect the current iteration, then include it in the commit. This is the same issue flagged in iteration 1. Please ensure the dev-agent's workflow is: (1) make code changes, (2) update PROGRESS.md to reflect the new iteration, (3) commit everything together.
 
 ## 💡 Suggestions (Optional)
 
-- Consider adding a `"preview"` flag to `package.json` since this is a pre-release extension (version `0.1.0`).
-- The `activationEvents: ["onStartupFinished"]` is a good choice per the dev's decision — VSCode 1.90+ auto-infers activation events from contributions, so this is technically redundant but explicit, which is fine.
+- The previous REVIEW_FEEDBACK.md was committed into git — this is fine for audit trail, just make sure it doesn't cause confusion. Future iterations will overwrite it.
 
 ## ❓ Questions
 
-- None — implementation is clear and well-documented.
+- None.
 
 ## Iteration
-- Iteration: 1/5
+- Iteration: 2/5
 - Status: CHANGES_REQUIRED
