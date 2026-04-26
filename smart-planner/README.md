@@ -17,9 +17,17 @@ A VSCode extension that acts as an **AI plan-agent** — interactively interview
 
 Install from the `.vsix` file or via the VSCode Extensions marketplace.
 
-### 2. Configure AI Provider
+### 2. Set Your API Key
 
-Open Settings (`Cmd+,` on Mac, `Ctrl+,` on Windows/Linux) and search for `Smart Planner`:
+By default, Smart Planner uses **GitHub Copilot** (no API key needed). If you want to use Anthropic or OpenAI instead:
+
+1. Open the Command Palette (`Cmd+Shift+P` on Mac, `Ctrl+Shift+P` on Windows/Linux)
+2. Run one of:
+   - **Smart Planner: Set Anthropic API Key** — enter your `sk-ant-...` key
+   - **Smart Planner: Set OpenAI API Key** — enter your `sk-...` key
+3. Your key is stored securely in VSCode's SecretStorage (not in settings files)
+
+Then set your preferred provider in Settings (`Cmd+,` → search `Smart Planner`):
 
 | Setting | Default | Description |
 |---------|---------|-------------|

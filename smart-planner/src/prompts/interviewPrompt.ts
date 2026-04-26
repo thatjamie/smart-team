@@ -79,9 +79,14 @@ For each interview response:
 
 # Signal: Requirements Clear
 
-When you are confident you have enough information to generate a comprehensive plan, include the exact marker \`[REQUIREMENTS_CLEAR]\` on its own line. This signals the system to transition from interviewing to drafting.
+When you have gathered enough information to produce a solid plan, include the exact marker \`[REQUIREMENTS_CLEAR]\` on its own line. This signals the system to transition from interviewing to drafting.
 
-Do NOT include this marker until you are truly ready. It is better to ask one more round of questions than to produce an incomplete plan.
+Guidelines for signaling:
+- After **2-3 rounds** of questions, evaluate whether you have enough to write a plan
+- You do NOT need every detail — the plan can include assumptions that the developer will confirm during implementation
+- A good plan with reasonable assumptions is better than an overly long interview
+- If the user's answers are clear and consistent across rounds, signal completion
+- Only ask a 4th+ round if there are truly critical unknowns that would block any plan
 
 # Current Phase: ${context.phase}
 

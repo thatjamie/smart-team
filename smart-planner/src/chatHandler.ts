@@ -13,10 +13,13 @@ import { loadState, saveState, clearState, createInitialState, updatePhase, addI
 import { writePlan, seedProgress, parsePlanFromAiOutput } from './planWriter';
 
 /** Maximum interview rounds before forcing plan generation. */
-const MAX_INTERVIEW_ROUNDS = 8;
+const MAX_INTERVIEW_ROUNDS = 5;
 
 /** Keywords that indicate user approval of the plan. */
 const APPROVAL_KEYWORDS = ['approve', 'approved', 'looks good', 'lgtm', 'ship it', 'finalize', 'confirmed', 'done', 'yes, write it', 'go ahead', 'write the plan'];
+
+/** Keywords that indicate the user wants to stop interviewing and generate the plan. */
+const STOP_INTERVIEW_KEYWORDS = ['stop', "that's enough", 'enough', 'no more questions', 'generate the plan', 'write the plan', 'move on', "let's go", 'go ahead and generate', 'start writing', 'just generate', 'skip to the plan', 'done answering', 'no more', 'that is all', "that's all", 'wrap it up', 'finish up', "i'm done"];
 
 /**
  * Chat handler for the Smart Planner extension.
@@ -209,22 +212,36 @@ export class ChatHandler {
     ): Promise<PlannerState> {
         // If there's a user message and pending questions, record the Q&A pairs
         if (userMessage && state.pendingQuestions.length > 0) {
+            // User answered the pending questions — this completes a round
             const round = state.interviewRound + 1;
-            // Store user's answer against the pending questions
             for (const question of state.pendingQuestions) {
                 state = addInterviewQA(state, question, userMessage, round);
             }
-            // Clear pending questions after recording
-            state = { ...state, pendingQuestions: [], lastActivity: new Date().toISOString() };
-        } else if (userMessage) {
-            // No pending questions — user is providing initial intent or freeform input
-            const round = state.interviewRound + 1;
-            state = addInterviewQA(state, 'User input', userMessage, round);
+            // Clear pending questions after recording, and bump the round counter
+            state = { ...state, interviewRound: round, pendingQuestions: [], lastActivity: new Date().toISOString() };
+        }
+        // Note: initial intent / freeform input is NOT counted as a round.
+        // Only user answers to AI questions increment the round.
+
+        // Check if user wants to stop the interview early
+        if (userMessage && isStopInterview(userMessage)) {
+            // Record any pending answers first
+            if (state.pendingQuestions.length > 0) {
+                const round = state.interviewRound + 1;
+                for (const question of state.pendingQuestions) {
+                    state = addInterviewQA(state, question, userMessage, round);
+                }
+                state = { ...state, interviewRound: round, pendingQuestions: [], lastActivity: new Date().toISOString() };
+            }
+            response.markdown('📝 **Got it! Moving to plan generation with what we have.**\n\n');
+            state = updatePhase(state, 'drafting');
+            saveState(state);
+            return await this.phaseDrafting(state, response, token);
         }
 
         // Check if we've exceeded max interview rounds
         if (state.interviewRound >= MAX_INTERVIEW_ROUNDS) {
-            response.markdown(`📋 **Maximum interview rounds reached (${MAX_INTERVIEW_ROUNDS}). Moving to plan generation.**\n\n`);
+            response.markdown(`📋 **Maximum interview rounds reached (${MAX_INTERVIEW_ROUNDS}). Moving to plan generation with what we have.**\n\n`);
             state = updatePhase(state, 'drafting');
             saveState(state);
             return await this.phaseDrafting(state, response, token);
@@ -232,7 +249,12 @@ export class ChatHandler {
 
         // Build interview prompt and call AI
         const plannerContext = stateToContext(state);
-        const systemPrompt = buildInterviewPrompt(plannerContext);
+
+        // Nudge the AI to wrap up if approaching the limit
+        let systemPrompt = buildInterviewPrompt(plannerContext);
+        if (state.interviewRound >= MAX_INTERVIEW_ROUNDS - 1) {
+            systemPrompt += `\n\nIMPORTANT: This is round ${state.interviewRound + 1} of a maximum of ${MAX_INTERVIEW_ROUNDS}. You MUST include [REQUIREMENTS_CLEAR] at the end of this response. Ask any final critical questions and then signal completion.`;
+        }
 
         const provider = await this.getAiProvider();
         const aiResponse = await provider.chat(
@@ -259,10 +281,11 @@ export class ChatHandler {
         // Extract questions from AI response and store as pending
         const extractedQuestions = extractQuestions(aiText);
 
-        // Increment round and store pending questions
+        // Extract questions from AI response and store as pending.
+        // Round counter is NOT bumped here — it was already bumped when
+        // recording the user's answers above.
         state = {
             ...state,
-            interviewRound: state.interviewRound + 1,
             pendingQuestions: extractedQuestions,
             lastActivity: new Date().toISOString(),
         };
@@ -602,6 +625,14 @@ function hasSourceCode(projectRoot: string): boolean {
 function isApproval(message: string): boolean {
     const lower = message.toLowerCase().trim();
     return APPROVAL_KEYWORDS.some(keyword => lower.includes(keyword));
+}
+
+/**
+ * Check if user message indicates they want to stop the interview.
+ */
+function isStopInterview(message: string): boolean {
+    const lower = message.toLowerCase().trim();
+    return STOP_INTERVIEW_KEYWORDS.some(keyword => lower.includes(keyword));
 }
 
 /**
