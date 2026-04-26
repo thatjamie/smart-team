@@ -4,6 +4,12 @@
   "description": "AI planning agent that creates structured implementation plans through interactive interviews",
   "version": "0.1.0",
   "publisher": "smart-team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thatjamie/smart-team.git",
+    "directory": "smart-planner"
+  },
   "engines": {
     "vscode": "^1.90.0"
   },
@@ -15,7 +21,7 @@
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
-  "icon": "media/icon.svg",
+  "icon": "media/icon.png",
   "contributes": {
     "chatParticipants": [
       {
@@ -44,7 +50,7 @@
         {
           "id": "smart-planner",
           "title": "Smart Planner",
-          "icon": "media/icon.svg"
+          "icon": "media/icon.png"
         }
       ]
     },
@@ -53,7 +59,7 @@
         {
           "id": "smart-planner-overview",
           "name": "Plan Overview",
-          "icon": "media/icon.svg"
+          "icon": "media/icon.png"
         }
       ]
     },
@@ -77,6 +83,14 @@
       {
         "command": "smart-planner.settings",
         "title": "Smart Planner: Settings"
+      },
+      {
+        "command": "smart-planner.setAnthropicApiKey",
+        "title": "Smart Planner: Set Anthropic API Key"
+      },
+      {
+        "command": "smart-planner.setOpenAIApiKey",
+        "title": "Smart Planner: Set OpenAI API Key"
       }
     ],
     "configuration": {
@@ -121,19 +135,22 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "esbuild": "npm run esbuild-base -- --sourcemap",
     "compile": "tsc",
     "watch": "tsc -watch",
-    "package": "npx vsce package"
+    "package": "npm run esbuild && npx vsce package"
   },
   "dependencies": {
-    "smart-team-common": "file:../smart-team-common",
     "@anthropic-ai/sdk": "^0.30.0",
     "openai": "^4.52.0"
   },
   "devDependencies": {
-    "@types/vscode": "^1.90.0",
     "@types/node": "^20.14.0",
+    "@types/vscode": "^1.90.0",
+    "esbuild": "^0.28.0",
+    "smart-team-common": "file:../smart-team-common",
     "typescript": "^5.5.0"
   }
 }

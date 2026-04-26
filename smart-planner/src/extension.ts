@@ -12,8 +12,8 @@ export function activate(context: vscode.ExtensionContext): void {
     // 1. Resolve project root (setting → workspace root)
     const projectRoot = resolveProjectRoot();
 
-    // 2. Create the chat handler
-    const chatHandler = new ChatHandler();
+    // 2. Create the chat handler (inject SecretStorage for API keys)
+    const chatHandler = new ChatHandler(context.secrets);
 
     // 3. Create tree provider and register tree view
     const treeProvider = new PlannerTreeProvider(projectRoot);
@@ -73,6 +73,37 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
         vscode.commands.registerCommand('smart-planner.settings', () => {
             vscode.commands.executeCommand('workbench.action.openSettings', 'smart-planner');
+        })
+    );
+
+    // 5b. API key commands
+    context.subscriptions.push(
+        vscode.commands.registerCommand('smart-planner.setAnthropicApiKey', async () => {
+            const key = await vscode.window.showInputBox({
+                prompt: 'Enter your Anthropic API key',
+                password: true,
+                ignoreFocusOut: true,
+                placeHolder: 'sk-ant-...',
+            });
+            if (key !== undefined) {
+                await context.secrets.store('smart-planner.anthropicApiKey', key);
+                vscode.window.showInformationMessage('Smart Planner: Anthropic API key saved.');
+            }
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('smart-planner.setOpenAIApiKey', async () => {
+            const key = await vscode.window.showInputBox({
+                prompt: 'Enter your OpenAI API key',
+                password: true,
+                ignoreFocusOut: true,
+                placeHolder: 'sk-...',
+            });
+            if (key !== undefined) {
+                await context.secrets.store('smart-planner.openaiApiKey', key);
+                vscode.window.showInformationMessage('Smart Planner: OpenAI API key saved.');
+            }
         })
     );
 

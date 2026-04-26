@@ -26,6 +26,14 @@ const APPROVAL_KEYWORDS = ['approve', 'approved', 'looks good', 'lgtm', 'ship it
  */
 export class ChatHandler {
     private aiProvider: AiProvider | undefined;
+    private readonly secretStorage: vscode.SecretStorage;
+
+    /**
+     * @param secretStorage - VSCode SecretStorage for API keys.
+     */
+    constructor(secretStorage: vscode.SecretStorage) {
+        this.secretStorage = secretStorage;
+    }
 
     /**
      * Handle an incoming chat request.
@@ -65,22 +73,9 @@ export class ChatHandler {
      */
     private async getAiProvider(): Promise<AiProvider> {
         if (!this.aiProvider) {
-            const secrets = await this.getSecretStorage();
-            this.aiProvider = await ProviderFactory.create(secrets, 'smart-planner');
+            this.aiProvider = await ProviderFactory.create(this.secretStorage, 'smart-planner');
         }
         return this.aiProvider;
-    }
-
-    /**
-     * Get VSCode SecretStorage. Accesses the extension global state.
-     */
-    private async getSecretStorage(): Promise<vscode.SecretStorage> {
-        const ext = vscode.extensions.getExtension('smart-team.smart-planner');
-        if (ext?.isActive && ext.exports?.secrets) {
-            return ext.exports.secrets as vscode.SecretStorage;
-        }
-        // Fallback: this should be injected during activation in Step 6
-        throw new Error('SecretStorage not available. Extension may not be fully activated.');
     }
 
     // ────────────────────────────────────────────────────────────────────────────
