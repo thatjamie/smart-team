@@ -2,7 +2,7 @@
 
 ## Summary
 
-Step 1 is well-implemented. All required files are present and the structure matches the plan. `npm run compile` passes with zero errors. The manifest, types, and config files are thorough and accurate. No blocking issues found.
+Step 1 is fully implemented and all review feedback from iteration 1 has been addressed. All required files are present, `npm run compile` passes with zero errors, and `DECISIONS.md` is now complete with all 4 decisions properly documented. **No blocking issues remain.**
 
 ## ✅ Approved Items
 
@@ -35,30 +35,24 @@ Step 1 is well-implemented. All required files are present and the structure mat
 
 - **Compile**: `npm run compile` produces zero errors ✅
 
-- **DECISIONS.md**: Properly populated with 3 decisions for Step 1, including rationale and dates
+- **DECISIONS.md**: Properly populated with all 4 decisions for Step 1:
+  - ✅ Re-export common types using `type` exports only
+  - ✅ Added `.planner-state.json` to `.gitignore`
+  - ✅ Used minimal activate stub with info message
+  - ✅ `.vscodeignore` uses `src/**` + negation pattern — revisit in Step 6 **(addressed in iteration 2)**
 
 ## ❌ Changes Required
 
-- [ ] **Issue 1: The `.vscodeignore` packaging concern must be recorded in DECISIONS.md**
-  - **Location**: `smart-planner/DECISIONS.md`
-  - **Context**: The developer noted in `DEV_NOTES.md` that the current `.vscodeignore` pattern (`src/**` + negations for `extension.ts` and `types.ts`) may exclude future source files needed in the package. However, this was **not** recorded in `DECISIONS.md`.
-  - **Why this matters**: `DEV_NOTES.md` is overwritten between steps. `DECISIONS.md` is the persistent cross-step decision log. If this concern isn't in `DECISIONS.md`, the dev-agent in Step 6 (Sidebar and Extension Activation, which includes `npx vsce package` testing) will have no awareness of it and may produce a broken `.vsix`.
-  - **Fix**: Add a decision entry to `DECISIONS.md` under Step 1 documenting the `.vscodeignore` concern and the plan to revisit it in Step 6. Suggested wording:
-    ```
-    - **Decision**: `.vscodeignore` uses `src/**` + negation pattern — revisit in Step 6
-      - **Context**: Current pattern excludes `src/**` but whitelists `src/extension.ts` and `src/types.ts`
-      - **Rationale**: Works for Step 1's file set but will need updating as Steps 2–6 add new modules. Since only `out/` is needed at runtime in the packaged extension, consider simplifying to just `src/` exclusion in Step 6 when `npx vsce package` is tested
-      - **Date**: 2025-04-25
-    ```
+None — all plan requirements are met and all review feedback has been addressed.
 
 ## 💡 Suggestions (Optional)
 
-None beyond the required change above.
+None.
 
 ## ❓ Questions
 
-None — the implementation is straightforward and matches the plan clearly.
+None.
 
 ## Iteration
-- Iteration: 1/5
-- Status: CHANGES_REQUIRED
+- Iteration: 2/5
+- Status: APPROVED
