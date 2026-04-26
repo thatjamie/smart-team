@@ -1,43 +1,28 @@
-# Review Feedback — Step 2: System Prompt
+# Review Feedback — Step 3: Context Builder and File Applier
 
 ## Summary
-Clean, well-structured implementation. The system prompt covers all required sections (Role, Core Rules, Output Format, Dynamic Context) and the XML output contract matches the PLAN.md spec exactly. Compiles cleanly, PROGRESS.md properly committed, working tree clean.
+Both blocking issues from iteration 1 have been correctly addressed in the working tree. The fixes compile cleanly. One remaining process issue: the changes are uncommitted.
 
 ## ✅ Approved Items
-- **Function signature**: `buildDevSystemPrompt(context: DevContext): string` matches PLAN.md exactly.
-- **File location**: `src/prompts/devSystemPrompt.ts` matches PLAN.md's "Files to Create".
-- **Section 1 — Role**: Clear definition of the dev-agent role, matching PLAN.md's "You are a dev-agent implementing code from PLAN.md".
-- **Section 2 — Core Rules**: 9 comprehensive rules covering step boundaries, conventions, output format, error handling, JSDoc, secrets, ambiguity resolution, and output-only-XML.
-- **Section 3 — Output Format**: XML template matches the PLAN.md spec exactly — `<dev-response>`, `<summary>`, `<file-change path="..." action="create|edit">`, `<dev-notes>`, `<decision context="..." rationale="...">`. All key rules documented (full replacement, multiple elements allowed, no text outside tags).
-- **Section 4 — Dynamic Context**: All 7 context fields from `DevContext` are injected:
-  - `planContent` (always included)
-  - `progressState` (conditional)
-  - `pastDecisions` (conditional)
-  - `reviewFeedback` (conditional)
-  - `languageFramework` (conditional)
-  - `projectStructure` (conditional)
-  - `existingFiles` (conditional, wrapped in code fences)
-- **Conditional injection**: Only non-empty sections are included — good for token efficiency.
-- **JSDoc**: Properly documented function with `@param` and `@returns`.
-- **Import**: Uses `import type { DevContext }` — correct for type-only import.
-- **Compilation**: `npm run compile` passes with zero errors.
-- **DECISIONS.md**: 3 well-documented decisions for Step 2.
-- **PROGRESS.md**: Properly committed at HEAD with correct iteration 1/5 and commit hash.
-- **Working tree**: Clean — no uncommitted changes.
+- **Fix 1 — `.trim()` on file content**: `fileApplier.ts:81` now uses `match[3].trim()`, consistent with `extractDecisions`. XML formatting whitespace will no longer leak into written files.
+- **Fix 2 — `stepIndex` guard**: `contextBuilder.ts:40-42` now throws a clear `Error("Invalid step index ...")` for out-of-range indices. Unnecessary ternaries removed at lines 44 and 63.
+- **Bonus fix — `parseDevResponse` try/catch** (from suggestion): `fileApplier.ts:24-59` now wraps the entire function body in try/catch, returning `undefined` on any error. This makes the parser more robust against malformed XML.
+- **Compilation**: `npm run compile` passes with zero errors after all fixes.
+- **All iteration 1 approved items remain valid**: function signatures, language detection, file tree, XML parsing, file application, JSDoc.
 
 ## ❌ Changes Required
 
-None.
+- [ ] **All fixes are uncommitted**: The dev-agent updated 5 files (`src/contextBuilder.ts`, `src/fileApplier.ts`, `DEV_NOTES.md`, `PROGRESS.md`, `REVIEW_FEEDBACK.md`) in the working tree but did not commit them. **Fix: Commit all changes together** including the updated PROGRESS.md with the new iteration number and commit hash.
 
 ## 💡 Suggestions (Optional)
 
-- The `<decision>` element uses `context` and `rationale` as XML attributes, while the `DecisionEntry` type in `types.ts` uses them as properties. This is fine since the file applier (Step 3) will handle the parsing, but worth noting for consistency when that step is implemented.
-- Consider adding a maximum token hint or length constraint in the prompt for the `<summary>` element to keep responses concise.
+- The `<decision>` attribute order assumption in the regex is still there (low risk but worth noting for future hardening).
+- Consider writing a unit test for `parseDevResponse` in a future step to verify edge cases.
 
 ## ❓ Questions
 
 None.
 
 ## Iteration
-- Iteration: 1/5
-- Status: APPROVED
+- Iteration: 2/5
+- Status: CHANGES_REQUIRED

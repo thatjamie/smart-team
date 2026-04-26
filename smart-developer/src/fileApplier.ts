@@ -21,32 +21,36 @@ import type { FileChange, DecisionEntry, DevAction } from './types';
  * @returns Parsed {@link DevAction}, or `undefined` if the response is unparseable.
  */
 export function parseDevResponse(aiText: string): DevAction | undefined {
-    // Extract content between <dev-response> and </dev-response>
-    const responseMatch = aiText.match(/<dev-response>([\s\S]*?)<\/dev-response>/);
-    if (!responseMatch) {
+    try {
+        // Extract content between <dev-response> and </dev-response>
+        const responseMatch = aiText.match(/<dev-response>([\s\S]*?)<\/dev-response>/);
+        if (!responseMatch) {
+            return undefined;
+        }
+
+        const body = responseMatch[1];
+
+        // Extract summary
+        const summary = extractTagContent(body, 'summary') ?? '';
+
+        // Extract all file changes
+        const fileChanges = extractFileChanges(body);
+
+        // Extract dev notes
+        const devNotesContent = extractTagContent(body, 'dev-notes') ?? '';
+
+        // Extract all decisions
+        const decisions = extractDecisions(body);
+
+        return {
+            summary,
+            fileChanges,
+            devNotesContent,
+            decisions,
+        };
+    } catch {
         return undefined;
     }
-
-    const body = responseMatch[1];
-
-    // Extract summary
-    const summary = extractTagContent(body, 'summary') ?? '';
-
-    // Extract all file changes
-    const fileChanges = extractFileChanges(body);
-
-    // Extract dev notes
-    const devNotesContent = extractTagContent(body, 'dev-notes') ?? '';
-
-    // Extract all decisions
-    const decisions = extractDecisions(body);
-
-    return {
-        summary,
-        fileChanges,
-        devNotesContent,
-        decisions,
-    };
 }
 
 /**
@@ -74,7 +78,7 @@ function extractFileChanges(xml: string): FileChange[] {
         changes.push({
             filePath: match[1].trim(),
             action: match[2].trim() as 'create' | 'edit',
-            content: match[3],
+            content: match[3].trim(),
         });
     }
 

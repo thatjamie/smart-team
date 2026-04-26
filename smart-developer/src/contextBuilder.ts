@@ -37,8 +37,12 @@ export function buildDevContext(
     progress: Progress | undefined,
     worktreeDir: string
 ): DevContext {
+    if (stepIndex < 0 || stepIndex >= plan.steps.length) {
+        throw new Error(`Invalid step index ${stepIndex}: plan has ${plan.steps.length} steps.`);
+    }
+
     const step = plan.steps[stepIndex];
-    const planContent = step ? step.content : '';
+    const planContent = step.content;
 
     // Progress state as text
     const progressState = progress ? formatProgressState(progress) : '';
@@ -56,7 +60,7 @@ export function buildDevContext(
     const projectStructure = buildFileTree(worktreeDir);
 
     // Existing files referenced by the step
-    const existingFiles = readExistingFiles(worktreeDir, step?.content ?? '');
+    const existingFiles = readExistingFiles(worktreeDir, step.content);
 
     return {
         planContent,
