@@ -58,3 +58,19 @@
   - **Context**: PLAN.md asks how strict validation should be
   - **Rationale**: AI output may vary in formatting (e.g., missing blank lines, slightly different heading styles). Blocking on validation would reject valid plans. Warnings via `console.warn` give visibility without blocking the flow
   - **Date**: 2025-04-26
+
+## Step 5: Chat Handler
+- **Decision**: Max interview rounds of 8 before forcing plan generation
+  - **Context**: PLAN.md asks for maximum interview rounds
+  - **Rationale**: 8 rounds (each with 2-4 questions) gives up to 32 questions — enough for complex projects. Prevents infinite interview loops
+  - **Date**: 2025-04-26
+
+- **Decision**: `/update` is single-turn, not multi-turn
+  - **Context**: PLAN.md describes `/update` as a multi-turn flow but simpler UX is possible
+  - **Rationale**: Users typically know what they want to change. Single-turn (describe changes → AI revises → done) is simpler and faster. If users need iteration, they can `/update` again
+  - **Date**: 2025-04-26
+
+- **Decision**: Approval detection via keyword matching
+  - **Context**: Need to detect when user approves the plan during reviewing phase
+  - **Rationale**: Keyword matching against 11 common approval phrases is simple, effective, and doesn't require AI calls. Edge cases where it misses an approval are handled by the user retrying
+  - **Date**: 2025-04-26
