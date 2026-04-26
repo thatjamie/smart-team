@@ -1,4 +1,5 @@
 import type { AiProvider, AiMessage, AiResponse, AiChatOptions } from '../types';
+import OpenAI from 'openai';
 
 /**
  * AI provider backed by the OpenAI API (GPT models).
@@ -27,8 +28,7 @@ export class OpenAIProvider implements AiProvider {
 
     /** @inheritdoc */
     async chat(messages: AiMessage[], options?: AiChatOptions): Promise<AiResponse> {
-        const OpenAI = this.loadSdk();
-        const client = new OpenAI.default({
+        const client = new OpenAI({
             apiKey: this.apiKey,
             ...(this.baseUrl ? { baseURL: this.baseUrl } : {}),
         });
@@ -56,8 +56,7 @@ export class OpenAIProvider implements AiProvider {
         onChunk: (text: string) => void,
         options?: AiChatOptions
     ): Promise<AiResponse> {
-        const OpenAI = this.loadSdk();
-        const client = new OpenAI.default({
+        const client = new OpenAI({
             apiKey: this.apiKey,
             ...(this.baseUrl ? { baseURL: this.baseUrl } : {}),
         });
@@ -94,23 +93,6 @@ export class OpenAIProvider implements AiProvider {
                 ? { inputTokens: usageInputTokens, outputTokens: usageOutputTokens }
                 : undefined,
         };
-    }
-
-    /**
-     * Dynamically load the OpenAI SDK.
-     * @throws Error if the SDK is not installed.
-     */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private loadSdk(): any {
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            return require('openai');
-        } catch {
-            throw new Error(
-                'The "openai" package is required for the OpenAI provider. ' +
-                'Install it as a dependency in the consuming extension.'
-            );
-        }
     }
 
     /**

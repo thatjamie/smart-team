@@ -1,4 +1,5 @@
 import type { AiProvider, AiMessage, AiResponse, AiChatOptions } from '../types';
+import Anthropic from '@anthropic-ai/sdk';
 
 /**
  * AI provider backed by the Anthropic API (Claude).
@@ -28,8 +29,7 @@ export class AnthropicProvider implements AiProvider {
 
     /** @inheritdoc */
     async chat(messages: AiMessage[], options?: AiChatOptions): Promise<AiResponse> {
-        const Anthropic = this.loadSdk();
-        const client = new Anthropic.default({
+        const client = new Anthropic({
             apiKey: this.apiKey,
             ...(this.baseUrl ? { baseURL: this.baseUrl } : {}),
         });
@@ -65,8 +65,7 @@ export class AnthropicProvider implements AiProvider {
         onChunk: (text: string) => void,
         options?: AiChatOptions
     ): Promise<AiResponse> {
-        const Anthropic = this.loadSdk();
-        const client = new Anthropic.default({
+        const client = new Anthropic({
             apiKey: this.apiKey,
             ...(this.baseUrl ? { baseURL: this.baseUrl } : {}),
         });
@@ -101,23 +100,6 @@ export class AnthropicProvider implements AiProvider {
             text,
             usage,
         };
-    }
-
-    /**
-     * Dynamically load the Anthropic SDK.
-     * @throws Error if the SDK is not installed.
-     */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private loadSdk(): any {
-        try {
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            return require('@anthropic-ai/sdk');
-        } catch {
-            throw new Error(
-                'The "@anthropic-ai/sdk" package is required for the Anthropic provider. ' +
-                'Install it as a dependency in the consuming extension.'
-            );
-        }
     }
 
     /**

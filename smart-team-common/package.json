@@ -4,26 +4,21 @@
   "description": "Shared types, AI providers, parsers, writers, git operations, and diff utilities for the Smart Team VSCode extensions",
   "main": "./out/index.js",
   "types": "./out/index.d.ts",
-  "files": ["out", "src"],
+  "files": [
+    "out",
+    "src"
+  ],
   "scripts": {
     "compile": "tsc",
     "watch": "tsc -watch"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "openai": "^4.52.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/vscode": "^1.90.0",
     "typescript": "^5.5.0"
-  },
-  "peerDependencies": {
-    "@anthropic-ai/sdk": "^0.30.0",
-    "openai": "^4.52.0"
-  },
-  "peerDependenciesMeta": {
-    "@anthropic-ai/sdk": {
-      "optional": true
-    },
-    "openai": {
-      "optional": true
-    }
   }
 }
