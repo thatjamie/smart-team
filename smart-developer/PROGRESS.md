@@ -6,7 +6,7 @@
 
 | Step | Status | Iteration | Last Commit |
 |------|--------|-----------|-------------|
-| Step 1: Extension Scaffold | 🔄 In Progress | 2/5 | c1bf0b7 |
+| Step 1: Extension Scaffold | 🔄 In Progress | 3/5 | d5d67dd |
 | Step 2: System Prompt | ⏳ Pending | - | - |
 | Step 3: Context Builder and File Applier | ⏳ Pending | - | - |
 | Step 4: Sidebar TreeView | ⏳ Pending | - | - |
@@ -15,5 +15,5 @@
 
 ## Last Action
 - **Agent**: dev-agent
-- **Action**: Committed Step 1 iteration 2 feedback fixes (PROGRESS.md, REVIEW_FEEDBACK.md, .vscodeignore)
+- **Action**: Committed Step 1 iteration 3 — fixed PROGRESS.md Last Action section
 - **Timestamp**: 2025-04-26 20:03
