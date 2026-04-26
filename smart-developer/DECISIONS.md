@@ -47,3 +47,19 @@
   - **Context**: File tree should show useful project structure, not config clutter
   - **Rationale**: Hidden directories (`.git`, `.vscode`, etc.) are rarely relevant to implementation and add noise to the file tree
   - **Date**: 2025-04-26
+
+## Step 4: Sidebar TreeView
+- **Decision**: Two-level tree hierarchy
+  - **Context**: PLAN.md shows a flat layout with indentation; needed to map to VSCode TreeDataProvider API
+  - **Rationale**: Root level shows plan info, worktree, current step, plus two expandable headers (Dev Files, All Steps). Headers expand to show children. Simple and matches PLAN.md layout.
+  - **Date**: 2025-04-26
+
+- **Decision**: Current step prefers in-progress, falls back to first pending
+  - **Context**: Need to highlight the most relevant step to the user
+  - **Rationale**: If a step is actively being worked on (🔄), that's most relevant. If all steps are pending or complete, the first pending step is the natural next action.
+  - **Date**: 2025-04-26
+
+- **Decision**: File items only clickable when file exists
+  - **Context**: Dev files (DEV_NOTES.md, etc.) may not exist yet early in the workflow
+  - **Rationale**: Showing a "not created" description without a click action avoids confusing errors. Once files exist, clicking opens them.
+  - **Date**: 2025-04-26
