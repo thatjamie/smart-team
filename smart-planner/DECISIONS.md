@@ -16,10 +16,10 @@
   - **Rationale**: Keeps step boundaries clear; the stub compiles and loads without errors
   - **Date**: 2025-04-25
 
-- **Decision**: `.vscodeignore` uses `src/**` + negation pattern — revisit in Step 6
-  - **Context**: Current pattern excludes `src/**` but whitelists `src/extension.ts` and `src/types.ts`
-  - **Rationale**: Works for Step 1's file set but will need updating as Steps 2–6 add new modules. Since only `out/` is needed at runtime in the packaged extension, consider simplifying to just `src/` exclusion in Step 6 when `npx vsce package` is tested
-  - **Date**: 2025-04-25
+- **Decision**: `.vscodeignore` uses `src/**` exclusion (resolved in Step 6)
+  - **Context**: Step 1 used `src/**` + negation whitelisting for `extension.ts` and `types.ts`
+  - **Rationale**: Resolved in Step 6 — simplified to `src/**` (exclude all source) since only `out/` is needed at runtime. Also excludes `*.md` except `README.md` to keep the .vsix lean. `media/icon.svg` is included automatically as it's referenced in `package.json`
+  - **Date**: 2025-04-25 (updated 2025-04-26)
 
 ## Step 2: System Prompts
 - **Decision**: No few-shot examples in prompts
@@ -73,4 +73,30 @@
 - **Decision**: Approval detection via keyword matching
   - **Context**: Need to detect when user approves the plan during reviewing phase
   - **Rationale**: Keyword matching against 11 common approval phrases is simple, effective, and doesn't require AI calls. Edge cases where it misses an approval are handled by the user retrying
+  - **Date**: 2025-04-26
+
+## Step 6: Sidebar and Extension Activation
+- **Decision**: Show plan outline (step titles) in sidebar, not full plan content
+  - **Context**: PLAN.md asks whether to show full plan or just outline
+  - **Rationale**: Full plan content would make the sidebar too long and hard to scan. Step titles give a quick overview; the full plan is already visible in the chat response. This matches VSCode sidebar conventions (concise, scannable)
+  - **Date**: 2025-04-26
+
+- **Decision**: File watcher scoped to project root with RelativePattern
+  - **Context**: Need to watch `.planner-state.json` for sidebar auto-refresh
+  - **Rationale**: `vscode.RelativePattern` scoped to the project root directory avoids watching state files from other projects or unrelated directories. Only create/change/delete events are needed
+  - **Date**: 2025-04-26
+
+- **Decision**: Sidebar layout: 3 sections (session info, interview history, plan outline)
+  - **Context**: PLAN.md asks for exact sidebar layout details
+  - **Rationale**: Session info is always expanded (most important context). Interview history and plan outline are collapsed by default (user expands when needed). Empty state shows helpful prompts. This gives a clear information hierarchy
+  - **Date**: 2025-04-26
+
+- **Decision**: `openProjectRoot` updates both VSCode setting and tree provider
+  - **Context**: User changes project root via folder picker command
+  - **Rationale**: Updating both the global setting and the tree provider ensures the chat handler (reads setting) and sidebar (reads state file from provider's root) stay consistent. Avoids stale state from mismatched roots
+  - **Date**: 2025-04-26
+
+- **Decision**: No test project content included for manual testing
+  - **Context**: PLAN.md asks about test project content for manual testing
+  - **Rationale**: The extension works on any existing project. Including a test project would add maintenance burden. Users can test with any workspace directory. The greenfield vs. brownfield auto-detection handles both cases
   - **Date**: 2025-04-26
