@@ -8,7 +8,7 @@
 |------|--------|-----------|-------------|
 | Step 1: Extension Scaffold | ✅ Complete | 3/5 | d5d67dd |
 | Step 2: System Prompt | ✅ Complete | 1/5 | 7accdfd |
-| Step 3: Context Builder and File Applier | 🔄 In Progress | - | - |
+| Step 3: Context Builder and File Applier | 🔄 In Progress | 1/5 | eeabc79 |
 | Step 4: Sidebar TreeView | ⏳ Pending | - | - |
 | Step 5: Chat Handler | ⏳ Pending | - | - |
 | Step 6: Extension Activation and Testing | ⏳ Pending | - | - |
