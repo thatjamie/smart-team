@@ -36,3 +36,19 @@
   - **Context**: Plan updates may renumber or add/remove steps, which requires PROGRESS.md to stay in sync
   - **Rationale**: Using `[PROGRESS_START]`/`[PROGRESS_END]` markers lets the chat handler extract both files from a single AI response, ensuring atomicity of the update
   - **Date**: 2025-04-26
+
+## Step 3: Codebase Explorer and State Manager
+- **Decision**: Max file tree depth of 4, max 200 entries
+  - **Context**: PLAN.md says depth 4; needed to decide on entry limit too
+  - **Rationale**: Depth 4 shows enough structure for most projects. 200 entries prevents huge trees from large repos (like monorepos with many packages) from consuming all the AI's context window
+  - **Date**: 2025-04-26
+
+- **Decision**: Only read file contents for config files, not source files
+  - **Context**: PLAN.md leaves it to the dev-agent to decide whether to read file contents beyond config/entry-point files
+  - **Rationale**: Reading source files would dramatically increase exploration time and token usage in the AI prompt. The file tree, config files, and conventions provide enough context for the planner to ask informed questions
+  - **Date**: 2025-04-26
+
+- **Decision**: Immutable state update pattern in stateManager
+  - **Context**: State is passed through multiple transformations during the planning flow
+  - **Rationale**: Immutable updates (spread + return new object) prevent accidental mutation bugs, especially important in a multi-phase flow where state is saved/loaded between turns
+  - **Date**: 2025-04-26

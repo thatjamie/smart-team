@@ -1,21 +1,33 @@
-# Dev Notes — Step 2: System Prompts
+# Dev Notes — Step 3: Codebase Explorer and State Manager
 
 ## What was implemented
-- Interview + exploration prompt builder (`src/prompts/interviewPrompt.ts`) — encodes codebase exploration guidance, interview technique (2-4 questions, prioritize by impact), 8 key areas to probe, requirements evolution handling, output format, and `[REQUIREMENTS_CLEAR]` signal
-- Plan generation prompt builder (`src/prompts/planGenerationPrompt.ts`) — encodes exact PLAN.md template, 6 step design principles, 4 step patterns, testing reminders, 16-item quality checklist, and `[PLAN_START]`/`[PLAN_END]` output markers
-- Plan update prompt builder (`src/prompts/planUpdatePrompt.ts`) — encodes update rules per step status (completed/in-progress/pending), 5-step update process, change presentation format, 9-item quality checklist for updated plans, and `[PLAN_START]`/`[PLAN_END]` + `[PROGRESS_START]`/`[PROGRESS_END]` output markers
+- Codebase exploration engine (`src/codebaseExplorer.ts`) — `exploreCodebase(projectRoot)` detects languages, frameworks, entry points, conventions, test frameworks, config files, and builds a recursive file tree
+- Interview state persistence (`src/stateManager.ts`) — `loadState`, `saveState`, `clearState`, `createInitialState`, plus helper functions `updatePhase`, `addInterviewQA`, `setDraftPlan`, `setCodebaseSummary` for immutable state updates
 - Verified `npm run compile` produces zero errors
 
 ## Files changed
-- `src/prompts/interviewPrompt.ts` — `buildInterviewPrompt(context: PlannerContext)` function with codebase summary and interview history formatting
-- `src/prompts/planGenerationPrompt.ts` — `buildPlanGenerationPrompt(context: PlannerContext)` function with full PLAN.md template and quality checklist
-- `src/prompts/planUpdatePrompt.ts` — `buildPlanUpdatePrompt(context: PlannerContext)` function with status-aware update rules
+- `src/codebaseExplorer.ts` — Full exploration engine with:
+  - Language detection from 12 config file indicators (TS, JS, Rust, Python, Go, Java, Ruby, PHP)
+  - Framework detection from package.json deps and Python/Go/Rust config files (22 frameworks)
+  - Recursive file tree builder (depth 4, max 200 entries, skips 19 noise directories)
+  - Entry point detection from 21 well-known candidates + package.json "main" field
+  - Convention detection: naming patterns (kebab, camel, snake, Pascal), organization (by feature vs type), linting config
+  - Test framework detection from package.json deps, Python configs, Go/Rust conventions
+  - Config file detection (30+ well-known config filenames)
+  - Graceful handling for non-existent directories (returns empty summary)
+- `src/stateManager.ts` — State persistence with:
+  - `loadState` with shape validation (returns undefined for corrupted/missing state)
+  - `saveState` writes JSON with pretty-printing
+  - `clearState` deletes the state file
+  - `createInitialState` creates a fresh idle state
+  - Immutable helper functions: `updatePhase`, `addInterviewQA`, `setDraftPlan`, `setCodebaseSummary`
 
 ## Decisions made
-- Used `import type` for `PlannerContext` and `CodebaseSummary` parameters to keep prompts runtime-light
-- Did NOT include few-shot example plans in the prompts — the template is detailed enough, and adding examples would bloat token usage significantly
-- Interview history in the interview prompt is grouped by round for clearer context flow
-- Plan update prompt includes PROGRESS.md output markers since updates may renumber steps
+- Max file tree depth: 4 levels — deep enough to see project structure without overwhelming the AI prompt
+- Max file tree entries: 200 — prevents huge trees from large repos, with "... (truncated)" marker
+- Only read file contents for config files (package.json, requirements.txt, pyproject.toml) — don't read source file contents during exploration (keeps exploration fast and within reasonable token limits)
+- State manager uses immutable update pattern (spread + return new object) — safer for multi-step flows where state is passed through multiple transformations
+- All state update helpers also update `lastActivity` timestamp — useful for detecting stale sessions
 
-## Review feedback addressed (iteration 2)
-- **Issue 1**: Removed unnecessary `StepStatus` re-export and import from `planUpdatePrompt.ts` — the type is already available via `src/types.ts`. The re-export in a prompt file was misleading about the file's responsibility.
+## Questions for reviewer
+- None
