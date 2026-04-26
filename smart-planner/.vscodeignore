@@ -8,4 +8,4 @@ tsconfig.json
 *.map
 *.md
 !README.md
-media/icon.svg
+!media/icon.svg
