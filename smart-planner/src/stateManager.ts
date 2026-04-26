@@ -42,6 +42,11 @@ export function loadState(projectRoot: string): PlannerState | undefined {
             return undefined;
         }
 
+        // Ensure pendingQuestions exists (backwards compatibility with older state files)
+        if (!Array.isArray(parsed.pendingQuestions)) {
+            parsed.pendingQuestions = [];
+        }
+
         return parsed as PlannerState;
     } catch {
         // Corrupted or invalid JSON — treat as no state
