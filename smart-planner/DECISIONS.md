@@ -52,3 +52,9 @@
   - **Context**: State is passed through multiple transformations during the planning flow
   - **Rationale**: Immutable updates (spread + return new object) prevent accidental mutation bugs, especially important in a multi-phase flow where state is saved/loaded between turns
   - **Date**: 2025-04-26
+
+## Step 4: Plan Writer
+- **Decision**: Non-blocking validation for plan content
+  - **Context**: PLAN.md asks how strict validation should be
+  - **Rationale**: AI output may vary in formatting (e.g., missing blank lines, slightly different heading styles). Blocking on validation would reject valid plans. Warnings via `console.warn` give visibility without blocking the flow
+  - **Date**: 2025-04-26

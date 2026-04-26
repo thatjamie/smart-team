@@ -1,33 +1,25 @@
-# Dev Notes — Step 3: Codebase Explorer and State Manager
+# Dev Notes — Step 4: Plan Writer
 
 ## What was implemented
-- Codebase exploration engine (`src/codebaseExplorer.ts`) — `exploreCodebase(projectRoot)` detects languages, frameworks, entry points, conventions, test frameworks, config files, and builds a recursive file tree
-- Interview state persistence (`src/stateManager.ts`) — `loadState`, `saveState`, `clearState`, `createInitialState`, plus helper functions `updatePhase`, `addInterviewQA`, `setDraftPlan`, `setCodebaseSummary` for immutable state updates
+- Plan writer module (`src/planWriter.ts`) with three exported functions:
+  - `writePlan(projectRoot, planContent)` — writes PLAN.md with non-blocking validation
+  - `seedProgress(projectRoot, planFilePath, planName, branch)` — creates PROGRESS.md using common's `parsePlan` + `initProgress`
+  - `parsePlanFromAiOutput(aiText)` — extracts plan content from AI response using marker detection or heading fallback
+- Validation checks (non-blocking): `# Plan:` heading, `## Overview`, `## Context`, step headings, per-step `**Goal:**` and `### Acceptance Criteria`
 - Verified `npm run compile` produces zero errors
 
 ## Files changed
-- `src/codebaseExplorer.ts` — Full exploration engine with:
-  - Language detection from 12 config file indicators (TS, JS, Rust, Python, Go, Java, Ruby, PHP)
-  - Framework detection from package.json deps and Python/Go/Rust config files (22 frameworks)
-  - Recursive file tree builder (depth 4, max 200 entries, skips 19 noise directories)
-  - Entry point detection from 21 well-known candidates + package.json "main" field
-  - Convention detection: naming patterns (kebab, camel, snake, Pascal), organization (by feature vs type), linting config
-  - Test framework detection from package.json deps, Python configs, Go/Rust conventions
-  - Config file detection (30+ well-known config filenames)
-  - Graceful handling for non-existent directories (returns empty summary)
-- `src/stateManager.ts` — State persistence with:
-  - `loadState` with shape validation (returns undefined for corrupted/missing state)
-  - `saveState` writes JSON with pretty-printing
-  - `clearState` deletes the state file
-  - `createInitialState` creates a fresh idle state
-  - Immutable helper functions: `updatePhase`, `addInterviewQA`, `setDraftPlan`, `setCodebaseSummary`
+- `src/planWriter.ts` — Three exported functions:
+  - `writePlan`: validates (warns but doesn't block) → writes to `<projectRoot>/PLAN.md` → returns file path
+  - `seedProgress`: parses written PLAN.md via common's `parsePlan` → maps steps to labels → calls common's `initProgress`
+  - `parsePlanFromAiOutput`: two-strategy extraction (markers first, `# Plan:` heading fallback)
+  - `validatePlan`: 6 validation checks with warning messages
+  - `splitByStepHeadings`: helper for per-step validation (strips code blocks like common's parser)
 
 ## Decisions made
-- Max file tree depth: 4 levels — deep enough to see project structure without overwhelming the AI prompt
-- Max file tree entries: 200 — prevents huge trees from large repos, with "... (truncated)" marker
-- Only read file contents for config files (package.json, requirements.txt, pyproject.toml) — don't read source file contents during exploration (keeps exploration fast and within reasonable token limits)
-- State manager uses immutable update pattern (spread + return new object) — safer for multi-step flows where state is passed through multiple transformations
-- All state update helpers also update `lastActivity` timestamp — useful for detecting stale sessions
+- Validation is non-blocking (warns via `console.warn` but still writes) — AI output may vary in formatting and we don't want to reject valid plans
+- `parsePlanFromAiOutput` strips code blocks during validation using same approach as common's `planParser` to avoid false positives
+- `seedProgress` uses common's `initProgress` directly — keeps PROGRESS.md format consistent with what dev-agent and review-agent expect
 
 ## Questions for reviewer
 - None
