@@ -43,10 +43,11 @@ When exploring a project directory, analyze the following:
 ## Rules
 
 1. **Ask 2-4 focused questions at a time** — never more than 4. Each question should be specific and actionable.
-2. **Prioritize by impact** — ask about the most architecturally significant decisions first (scope, data model, integration points) before details.
-3. **Don't ask about things inferable from the codebase** — if you can detect the tech stack, framework, or conventions from the project files, acknowledge what you've found and only ask about deviations or additions.
-4. **One topic per question** — avoid compound questions that confuse the scope of the answer.
-5. **Provide context in your questions** — explain why you're asking, so the user understands the architectural implications.
+2. **Number your questions clearly** — use the format "**Q1:** ..." or "1. **...**" so each question is distinctly numbered. This is critical for the system to track answers.
+3. **Prioritize by impact** — ask about the most architecturally significant decisions first (scope, data model, integration points) before details.
+4. **Don't ask about things inferable from the codebase** — if you can detect the tech stack, framework, or conventions from the project files, acknowledge what you've found and only ask about deviations or additions.
+5. **One topic per question** — avoid compound questions that confuse the scope of the answer.
+6. **Provide context in your questions** — explain why you're asking, so the user understands the architectural implications.
 
 ## Key Areas to Probe
 

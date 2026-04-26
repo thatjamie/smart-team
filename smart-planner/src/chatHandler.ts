@@ -11,6 +11,7 @@ import { buildPlanUpdatePrompt } from './prompts/planUpdatePrompt';
 import { exploreCodebase } from './codebaseExplorer';
 import { loadState, saveState, clearState, createInitialState, updatePhase, addInterviewQA, setDraftPlan, setCodebaseSummary } from './stateManager';
 import { writePlan, seedProgress, parsePlanFromAiOutput } from './planWriter';
+import { extractQuestions } from './questionExtractor';
 
 /** Maximum interview rounds before forcing plan generation. */
 const MAX_INTERVIEW_ROUNDS = 5;
@@ -203,6 +204,10 @@ export class ChatHandler {
 
     /**
      * Interviewing phase: gather requirements through multi-turn Q&A.
+     *
+     * Supports one-by-one answering: the user can answer each question
+     * individually across multiple messages. Once all pending questions
+     * have answers, the round is complete and AI is called for the next round.
      */
     private async phaseInterviewing(
         state: PlannerState,
@@ -210,28 +215,69 @@ export class ChatHandler {
         response: vscode.ChatResponseStream,
         token: vscode.CancellationToken
     ): Promise<PlannerState> {
-        // If there's a user message and pending questions, record the Q&A pairs
-        if (userMessage && state.pendingQuestions.length > 0) {
-            // User answered the pending questions — this completes a round
-            const round = state.interviewRound + 1;
-            for (const question of state.pendingQuestions) {
-                state = addInterviewQA(state, question, userMessage, round);
-            }
-            // Clear pending questions after recording, and bump the round counter
-            state = { ...state, interviewRound: round, pendingQuestions: [], lastActivity: new Date().toISOString() };
-        }
-        // Note: initial intent / freeform input is NOT counted as a round.
-        // Only user answers to AI questions increment the round.
 
-        // Check if user wants to stop the interview early
+        // ── Collect answers for pending questions ──────────────────────────
+        if (userMessage && state.pendingQuestions.length > 0) {
+            // Determine which question this answer is for
+            const answeredCount = Object.keys(state.partialAnswers).length;
+            const currentQuestionIndex = answeredCount;
+
+            if (currentQuestionIndex < state.pendingQuestions.length) {
+                // Record this answer
+                state = {
+                    ...state,
+                    partialAnswers: {
+                        ...state.partialAnswers,
+                        [currentQuestionIndex]: userMessage,
+                    },
+                    lastActivity: new Date().toISOString(),
+                };
+            }
+
+            // Check if all questions are now answered
+            const totalAnswered = Object.keys(state.partialAnswers).length;
+            if (totalAnswered < state.pendingQuestions.length) {
+                // Still waiting for more answers — show what's remaining
+                const nextIndex = totalAnswered;
+                const remaining = state.pendingQuestions.length - totalAnswered;
+                response.markdown(`✅ Answer recorded for question ${nextIndex} of ${state.pendingQuestions.length}.`);
+                response.markdown(`\n\n**Question ${nextIndex + 1}:** ${state.pendingQuestions[nextIndex]}`);
+                response.markdown(`\n\n*${remaining} question${remaining > 1 ? 's' : ''} remaining in this round.*\n`);
+                return state;
+            }
+
+            // All questions answered — complete the round
+            const round = state.interviewRound + 1;
+            for (let i = 0; i < state.pendingQuestions.length; i++) {
+                state = addInterviewQA(
+                    state,
+                    state.pendingQuestions[i],
+                    state.partialAnswers[i],
+                    round
+                );
+            }
+            const roundAnswerCount = state.pendingQuestions.length;
+            state = {
+                ...state,
+                interviewRound: round,
+                pendingQuestions: [],
+                partialAnswers: {},
+                lastActivity: new Date().toISOString(),
+            };
+            response.markdown(`✅ **Round ${round} complete!** All ${roundAnswerCount} answers recorded.\n\n`);
+        }
+
+        // ── Check for early stop ──────────────────────────────────────────
         if (userMessage && isStopInterview(userMessage)) {
-            // Record any pending answers first
-            if (state.pendingQuestions.length > 0) {
+            // Complete any partial answers with what we have
+            if (state.pendingQuestions.length > 0 && Object.keys(state.partialAnswers).length > 0) {
                 const round = state.interviewRound + 1;
-                for (const question of state.pendingQuestions) {
-                    state = addInterviewQA(state, question, userMessage, round);
+                for (let i = 0; i < state.pendingQuestions.length; i++) {
+                    if (state.partialAnswers[i]) {
+                        state = addInterviewQA(state, state.pendingQuestions[i], state.partialAnswers[i], round);
+                    }
                 }
-                state = { ...state, interviewRound: round, pendingQuestions: [], lastActivity: new Date().toISOString() };
+                state = { ...state, interviewRound: round, pendingQuestions: [], partialAnswers: {}, lastActivity: new Date().toISOString() };
             }
             response.markdown('📝 **Got it! Moving to plan generation with what we have.**\n\n');
             state = updatePhase(state, 'drafting');
@@ -239,7 +285,7 @@ export class ChatHandler {
             return await this.phaseDrafting(state, response, token);
         }
 
-        // Check if we've exceeded max interview rounds
+        // ── Check max rounds ──────────────────────────────────────────────
         if (state.interviewRound >= MAX_INTERVIEW_ROUNDS) {
             response.markdown(`📋 **Maximum interview rounds reached (${MAX_INTERVIEW_ROUNDS}). Moving to plan generation with what we have.**\n\n`);
             state = updatePhase(state, 'drafting');
@@ -247,7 +293,13 @@ export class ChatHandler {
             return await this.phaseDrafting(state, response, token);
         }
 
-        // Build interview prompt and call AI
+        // ── If still collecting answers, don't call AI yet ────────────────
+        if (state.pendingQuestions.length > 0 && Object.keys(state.partialAnswers).length < state.pendingQuestions.length) {
+            // Shouldn't reach here normally, but just in case
+            return state;
+        }
+
+        // ── Call AI for next round of questions ───────────────────────────
         const plannerContext = stateToContext(state);
 
         // Nudge the AI to wrap up if approaching the limit
@@ -256,11 +308,24 @@ export class ChatHandler {
             systemPrompt += `\n\nIMPORTANT: This is round ${state.interviewRound + 1} of a maximum of ${MAX_INTERVIEW_ROUNDS}. You MUST include [REQUIREMENTS_CLEAR] at the end of this response. Ask any final critical questions and then signal completion.`;
         }
 
+        // Build the prompt for the next round.
+        // If we just completed a round, summarize the Q&A — don't send the raw last answer.
+        let aiUserMessage: string;
+        if (state.interviewRound > 0 && state.interviewQA.length > 0) {
+            const lastQA = state.interviewQA.slice(-4); // last round's Q&As
+            const summary = lastQA
+                .map(qa => `Q: ${qa.question}\nA: ${qa.answer}`)
+                .join('\n\n');
+            aiUserMessage = `Here are my answers to your last round of questions:\n\n${summary}\n\nPlease ask your next round of questions based on this information.`;
+        } else {
+            aiUserMessage = userMessage || 'Start the interview. Ask your first round of questions.';
+        }
+
         const provider = await this.getAiProvider();
         const aiResponse = await provider.chat(
             [
                 { role: 'system', content: systemPrompt },
-                { role: 'user', content: userMessage || 'Start the interview. Ask your first round of questions.' },
+                { role: 'user', content: aiUserMessage },
             ],
             { maxTokens: 2048 }
         );
@@ -278,17 +343,24 @@ export class ChatHandler {
         // Show the AI's questions
         response.markdown(aiText);
 
-        // Extract questions from AI response and store as pending
-        const extractedQuestions = extractQuestions(aiText);
+        // Extract questions using AI and store as pending
+        const extractedQuestions = await extractQuestions(aiText, provider);
 
-        // Extract questions from AI response and store as pending.
-        // Round counter is NOT bumped here — it was already bumped when
-        // recording the user's answers above.
         state = {
             ...state,
             pendingQuestions: extractedQuestions,
+            partialAnswers: {},
             lastActivity: new Date().toISOString(),
         };
+
+        // If there are questions, show all of them and prompt the user to start
+        if (extractedQuestions.length > 0) {
+            const questionList = extractedQuestions
+                .map((q, i) => `${i + 1}. ${q}`)
+                .join('\n');
+            response.markdown(`\n\n---\n**Please answer the ${extractedQuestions.length} questions one at a time.** Here are the questions:\n\n${questionList}\n\n> Start with question 1.\n`);
+        }
+
         return state;
     }
 
@@ -706,63 +778,3 @@ function formatCodebaseOverview(summary: import('./types').CodebaseSummary): str
     return parts.join('\n');
 }
 
-/**
- * Extract questions from AI interview response text.
- *
- * Looks for common question patterns:
- * - Numbered questions: "1. **Question text?**" or "1. Question text?"
- * - Bold questions: "**Question text?**"
- * - Lines ending with "?"
- *
- * Returns the extracted question strings, or a fallback summary if none found.
- */
-function extractQuestions(aiText: string): string[] {
-    const questions: string[] = [];
-    const lines = aiText.split('\n');
-
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed) { continue; }
-
-        // Match numbered questions: "1. **What...?**" or "1. What...?"
-        const numberedMatch = trimmed.match(/^\d+[\.\)]\s+\*\*(.+?\?)\*\*/);
-        if (numberedMatch) {
-            questions.push(numberedMatch[1]);
-            continue;
-        }
-
-        // Match numbered without bold: "1. What...?"
-        const numberedPlainMatch = trimmed.match(/^\d+[\.\)]\s+(.+?\?)\s*$/);
-        if (numberedPlainMatch) {
-            questions.push(numberedPlainMatch[1]);
-            continue;
-        }
-
-        // Match bold questions: "**What...?**"
-        const boldMatch = trimmed.match(/^\*\*(.+?\?)\*\*/);
-        if (boldMatch) {
-            questions.push(boldMatch[1]);
-            continue;
-        }
-    }
-
-    // Fallback: if no structured questions found, use the first line that ends with "?"
-    if (questions.length === 0) {
-        for (const line of lines) {
-            const trimmed = line.trim().replace(/\*\*/g, '');
-            if (trimmed.endsWith('?') && trimmed.length > 10) {
-                questions.push(trimmed);
-            }
-        }
-    }
-
-    // If still nothing, store a summary of the AI response as the "question"
-    if (questions.length === 0) {
-        const summaryLine = lines.find(l => l.trim().length > 0);
-        if (summaryLine) {
-            questions.push(summaryLine.trim().substring(0, 200));
-        }
-    }
-
-    return questions;
-}

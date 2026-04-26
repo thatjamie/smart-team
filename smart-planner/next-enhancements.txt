@@ -1,0 +1,2 @@
+1. Ask AI to prompt with structured question format so that planner could parse.
+2. After above, change parser to avoid additional AI token.

@@ -47,6 +47,11 @@ export function loadState(projectRoot: string): PlannerState | undefined {
             parsed.pendingQuestions = [];
         }
 
+        // Ensure partialAnswers exists (backwards compatibility)
+        if (!parsed.partialAnswers || typeof parsed.partialAnswers !== 'object') {
+            parsed.partialAnswers = {};
+        }
+
         return parsed as PlannerState;
     } catch {
         // Corrupted or invalid JSON — treat as no state
@@ -109,6 +114,7 @@ export function createInitialState(
         interviewQA: [],
         interviewRound: 0,
         pendingQuestions: [],
+        partialAnswers: {},
         lastActivity: new Date().toISOString(),
     };
 }

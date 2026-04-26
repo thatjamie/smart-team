@@ -38,6 +38,8 @@ export interface PlannerState {
     interviewRound: number;
     /** AI-generated questions from the last turn, awaiting user answers */
     pendingQuestions: string[];
+    /** Partial answers collected so far for the current round (index → answer) */
+    partialAnswers: Record<number, string>;
     /** Draft plan content (if any) */
     draftPlan?: string;
     /** Path to the generated PLAN.md */
