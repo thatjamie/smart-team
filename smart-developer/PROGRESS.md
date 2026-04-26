@@ -7,7 +7,7 @@
 | Step | Status | Iteration | Last Commit |
 |------|--------|-----------|-------------|
 | Step 1: Extension Scaffold | ✅ Complete | 3/5 | d5d67dd |
-| Step 2: System Prompt | 🔄 In Progress | - | - |
+| Step 2: System Prompt | 🔄 In Progress | 1/5 | 7accdfd |
 | Step 3: Context Builder and File Applier | ⏳ Pending | - | - |
 | Step 4: Sidebar TreeView | ⏳ Pending | - | - |
 | Step 5: Chat Handler | ⏳ Pending | - | - |
