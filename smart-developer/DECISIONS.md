@@ -31,3 +31,19 @@
   - **Context**: Not all context fields are always available (e.g., review feedback only for iterations > 1)
   - **Rationale**: Including empty sections wastes tokens and could confuse the AI. Only non-empty context sections are injected into the prompt
   - **Date**: 2025-04-26
+
+## Step 3: Context Builder and File Applier
+- **Decision**: File tree max depth of 4
+  - **Context**: PLAN.md says "Maximum depth for file tree" is a dev-agent decision
+  - **Rationale**: Depth 4 covers most project structures (e.g., `src/module/subdir/file.ts`) without overwhelming the AI context. Deeper trees cost more tokens with diminishing returns.
+  - **Date**: 2025-04-26
+
+- **Decision**: Max 10 existing files in context
+  - **Context**: PLAN.md says "Maximum number of existing files to include" is a dev-agent decision
+  - **Rationale**: 10 files provides enough reference material for the AI to understand conventions without exceeding typical context windows. Files are selected by relevance (referenced in step content).
+  - **Date**: 2025-04-26
+
+- **Decision**: Skip hidden files/dirs in file tree
+  - **Context**: File tree should show useful project structure, not config clutter
+  - **Rationale**: Hidden directories (`.git`, `.vscode`, etc.) are rarely relevant to implementation and add noise to the file tree
+  - **Date**: 2025-04-26

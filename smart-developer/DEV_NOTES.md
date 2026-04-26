@@ -1,23 +1,31 @@
-# Dev Notes — Step 2: System Prompt
+# Dev Notes — Step 3: Context Builder and File Applier
 
 ## What was implemented
-- `buildDevSystemPrompt(context: DevContext): string` — builds the complete system prompt
-- Four prompt sections: Role, Core Rules, Output Format, Dynamic Context
-- XML output format contract exactly matching PLAN.md spec
-- Dynamic context injection for plan content, progress, decisions, review feedback, file tree, and existing files
+- `buildDevContext(planRoot, stepIndex, plan, progress, worktreeDir)` → `DevContext` — assembles full AI context
+- `parseDevResponse(aiText)` → `DevAction | undefined` — parses AI XML output
+- `applyFileChanges(worktreeDir, fileChanges)` → `ApplyResult` — writes files to worktree
+- Language/framework detection from config files (TS, JS, Rust, Python, Go, Java, React, Express, Next.js, VSCode Extension)
+- Recursive file tree builder with depth limit (4) and directory skipping (node_modules, .git, out, dist, etc.)
+- Existing file reader that extracts referenced paths from step content (backtick paths + `src/` patterns)
+- Review feedback reader for iterations > 1
 
 ## Files changed
-- `src/prompts/devSystemPrompt.ts` — New file with system prompt builder function
+- `src/contextBuilder.ts` — New file with context assembly logic (plan, progress, decisions, review feedback, file tree, language detection, existing files)
+- `src/fileApplier.ts` — New file with XML parsing (summary, file-change, dev-notes, decision tags) and file application (mkdir recursive + write)
 
 ## Decisions made
-- System prompt uses markdown headings (#, ##) for AI readability rather than flat text
-- Core rules include 9 explicit rules covering step boundaries, conventions, output format, error handling, JSDoc, and secrets
-- Dynamic context sections are conditionally included — only non-empty sections appear
-- Existing files are wrapped in markdown code fences within the prompt for clear delimiting
+- File tree max depth: 4 (balances context richness vs. token cost)
+- Max existing files: 10 (prevents context overflow for large steps)
+- Skip directories: node_modules, .git, out, dist, .vscode-test, __pycache__
+- Hidden files/dirs (starting with `.`) excluded from file tree
+- File tree uses emoji icons (📁/📄) for visual clarity in the AI prompt
+- Language detection checks package.json dependencies for framework identification
+- File applier silently skips files that fail to write (non-crashing)
+- File applier does NOT auto-commit or modify PROGRESS.md
 
 ## Questions for reviewer
-- None
+- None — all requirements clearly specified in PLAN.md
 
 ## Verification
 - `npm run compile` produces zero errors
-- Function signature matches PLAN.md: `buildDevSystemPrompt(context: DevContext): string`
+- All function signatures match PLAN.md spec
