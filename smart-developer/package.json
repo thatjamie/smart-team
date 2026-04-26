@@ -1,0 +1,159 @@
+{
+  "name": "smart-developer",
+  "displayName": "Smart Developer",
+  "description": "AI dev-agent that implements code from PLAN.md step by step with human approval",
+  "version": "0.1.0",
+  "publisher": "smart-team",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Chat",
+    "Programming Languages",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "smart-developer",
+        "name": "smart-developer",
+        "description": "AI dev-agent that implements code from PLAN.md",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "implement",
+            "description": "Implement a plan step using AI (e.g., /implement 2)"
+          },
+          {
+            "name": "commit",
+            "description": "Review changes and commit the current step"
+          },
+          {
+            "name": "feedback",
+            "description": "Address review feedback for the current step"
+          },
+          {
+            "name": "status",
+            "description": "Show plan state, step statuses, and worktree info"
+          }
+        ]
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "smart-developer",
+          "title": "Smart Developer",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "smart-developer": [
+        {
+          "id": "smart-developer-steps",
+          "name": "Plan Steps",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "smart-developer.startStep",
+        "title": "Smart Developer: Start Step",
+        "category": "Smart Developer"
+      },
+      {
+        "command": "smart-developer.commitStep",
+        "title": "Smart Developer: Commit Step",
+        "category": "Smart Developer"
+      },
+      {
+        "command": "smart-developer.addressFeedback",
+        "title": "Smart Developer: Address Feedback",
+        "category": "Smart Developer"
+      },
+      {
+        "command": "smart-developer.openWorktree",
+        "title": "Smart Developer: Open Worktree",
+        "category": "Smart Developer"
+      },
+      {
+        "command": "smart-developer.refresh",
+        "title": "Smart Developer: Refresh",
+        "category": "Smart Developer"
+      },
+      {
+        "command": "smart-developer.settings",
+        "title": "Smart Developer: Open Settings",
+        "category": "Smart Developer"
+      }
+    ],
+    "configuration": {
+      "title": "Smart Developer",
+      "properties": {
+        "smart-developer.aiProvider": {
+          "type": "string",
+          "enum": [
+            "copilot",
+            "anthropic",
+            "openai"
+          ],
+          "default": "copilot",
+          "description": "AI provider to use for code generation",
+          "enumDescriptions": [
+            "GitHub Copilot (uses VSCode Language Model API)",
+            "Anthropic Claude (requires API key)",
+            "OpenAI GPT (requires API key)"
+          ]
+        },
+        "smart-developer.planSearchMaxDepth": {
+          "type": "number",
+          "default": 3,
+          "minimum": 0,
+          "maximum": 10,
+          "description": "Maximum directory depth to search for PLAN.md files"
+        },
+        "smart-developer.anthropicBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Custom base URL for Anthropic API (leave empty for default)"
+        },
+        "smart-developer.anthropicModel": {
+          "type": "string",
+          "default": "claude-sonnet-4-20250514",
+          "description": "Anthropic model to use"
+        },
+        "smart-developer.openaiBaseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Custom base URL for OpenAI API (leave empty for default)"
+        },
+        "smart-developer.openaiModel": {
+          "type": "string",
+          "default": "gpt-4o",
+          "description": "OpenAI model to use"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc",
+    "watch": "tsc -watch",
+    "package": "npx vsce package"
+  },
+  "dependencies": {
+    "smart-team-common": "file:../smart-team-common",
+    "@anthropic-ai/sdk": "^0.30.0",
+    "openai": "^4.52.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0"
+  }
+}
