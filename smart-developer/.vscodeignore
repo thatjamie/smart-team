@@ -5,5 +5,4 @@ src/**
 !src/types.ts
 .gitignore
 tsconfig.json
-**/*.tsbuildinfo
 **/*.map
