@@ -63,3 +63,19 @@
   - **Context**: Dev files (DEV_NOTES.md, etc.) may not exist yet early in the workflow
   - **Rationale**: Showing a "not created" description without a click action avoids confusing errors. Once files exist, clicking opens them.
   - **Date**: 2025-04-26
+
+## Step 5: Chat Handler
+- **Decision**: Diff shown inline (truncated) + in editor tab
+  - **Context**: PLAN.md asks how to present diff to user
+  - **Rationale**: Inline gives quick overview, editor tab provides full syntax-highlighted diff for detailed review. Truncating inline at 2000 chars avoids flooding the chat.
+  - **Date**: 2025-04-27
+
+- **Decision**: Modal confirmation for /commit
+  - **Context**: User must approve before any commit
+  - **Rationale**: `showWarningMessage` with modal:true forces explicit "Commit" button click — consistent with the dev-agent workflow rule that commits always require human approval.
+  - **Date**: 2025-04-27
+
+- **Decision**: /feedback for CHANGES_REQUIRED delegates to /implement
+  - **Context**: Addressing feedback is essentially re-implementing with added context
+  - **Rationale**: The context builder already picks up REVIEW_FEEDBACK.md when iteration > 1, so re-running the full implement flow naturally includes feedback in the AI prompt. No special feedback-specific code needed.
+  - **Date**: 2025-04-27

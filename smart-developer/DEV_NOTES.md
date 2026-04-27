@@ -1,28 +1,27 @@
-# Dev Notes — Step 4: Sidebar TreeView
+# Dev Notes — Step 5: Chat Handler
 
 ## What was implemented
-- `StepTreeProvider` class implementing `vscode.TreeDataProvider` for the sidebar
-- Hierarchical tree with 5 root sections: Plan Info, Worktree, Current Step, Dev Files, All Steps
-- Dev Files section: DEV_NOTES.md (summary), DECISIONS.md (count), REVIEW_FEEDBACK.md (status)
-- All Steps section: each step with status icon (⏳/🔄/✅) and commit hash
-- Clickable items: plan/step items open PLAN.md, dev file items open the respective file
-- "No plan found" message when PLAN.md is not in workspace
-- `refresh()` method for tree refresh triggered by file watchers
+- `handleChatRequest()` — main dispatcher for all chat commands
+- `/implement [step]` — full AI implementation flow: find plan → determine step → ensure worktree → build context → build system prompt → stream to AI → parse XML → apply files → write DEV_NOTES/DECISIONS → show diff
+- `/commit` — show diff in editor + inline preview → modal confirmation → commit via common gitWrite → update PROGRESS.md
+- `/feedback` — parse REVIEW_FEEDBACK.md → if APPROVED offer to mark step complete → if CHANGES_REQUIRED re-run implement flow
+- `/status` — formatted markdown table with plan name, branch, worktree, all step statuses, last action
+- Help text shown when no command is specified
 
 ## Files changed
-- `src/providers/stepTreeProvider.ts` — New file with complete sidebar tree provider
+- `src/chatHandler.ts` — New file with all four command handlers (457 lines)
 
 ## Decisions made
-- Tree uses two-level hierarchy: root items + expandable headers (Dev Files, All Steps)
-- All items use emoji icons matching the PROGRESS.md convention (📋📍📌📂📝📋🔍⏳🔄✅)
-- File items only have click-to-open commands when the file actually exists
-- `planRoot` is cached per refresh cycle to avoid redundant file searches
-- Current step detection: prefers in-progress step, falls back to first pending step
+- Diff shown both inline (truncated to 2000 chars) AND in a separate editor tab for full review
+- `/commit` uses modal confirmation dialog (showWarningMessage) — user must explicitly confirm
+- `/implement` with no arg finds current in-progress step, falls back to first pending
+- `/feedback` for CHANGES_REQUIRED delegates to the full implement flow (context builder picks up REVIEW_FEEDBACK.md automatically since iteration > 1)
+- PROGRESS.md is NOT modified during /implement — only during /commit
+- Error cases (no workspace, no plan, no worktree, AI parse failure, provider error) all show clear ❌ messages
 
 ## Questions for reviewer
-- None — all requirements clearly specified in PLAN.md
+- None
 
 ## Verification
 - `npm run compile` produces zero errors
-- Uses all shared parsers from smart-team-common (parsePlan, parseProgress, parseDevNotes, parseDecisions, parseReviewFeedback)
-- File watcher wiring deferred to Step 6 (extension activation)
+- All imports resolve correctly from smart-team-common and local modules
