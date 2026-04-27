@@ -7,7 +7,7 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { findPlanFile } from 'smart-team-common';
+import { findPlanFile, findDevWorktree, getProjectRoot } from 'smart-team-common';
 import { StepTreeProvider } from './providers/stepTreeProvider';
 import { handleChatRequest } from './chatHandler';
 
@@ -88,8 +88,6 @@ export function activate(context: vscode.ExtensionContext): void {
                 vscode.window.showWarningMessage('Not inside a git repository.');
                 return;
             }
-            // Try to find dev worktree
-            const { findDevWorktree } = require('smart-team-common');
             const worktreeInfo = findDevWorktree(projectRoot);
             if (worktreeInfo?.exists) {
                 await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(worktreeInfo.path), true);
@@ -189,17 +187,4 @@ export function activate(context: vscode.ExtensionContext): void {
  */
 export function deactivate(): void {
     // Cleanup is handled by context.subscriptions disposal
-}
-
-/**
- * Get the git project root from a workspace path.
- * Re-uses getProjectRoot from smart-team-common.
- */
-function getProjectRoot(workspacePath: string): string | undefined {
-    try {
-        const { getProjectRoot } = require('smart-team-common');
-        return getProjectRoot(workspacePath);
-    } catch {
-        return undefined;
-    }
 }

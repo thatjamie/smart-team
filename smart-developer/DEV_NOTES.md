@@ -25,5 +25,11 @@
 
 ## Verification
 - `npm run compile` produces zero errors
-- All imports resolve: StepTreeProvider, handleChatRequest, findPlanFile from common
+- All imports resolve: StepTreeProvider, handleChatRequest, findPlanFile, findDevWorktree, getProjectRoot from common
 - Chat participant handler correctly receives `context.secrets` from outer scope
+- `npm run package` produces 39KB VSIX (well under 5MB)
+
+## Review feedback addressed (iteration 2)
+- **`setApiKey` command not declared in package.json**: Accepted — added `smart-developer.setApiKey` command entry to `contributes.commands` in `package.json`.
+- **`npx vsce package` fails with path error**: Accepted — `file:../smart-team-common` symlink causes `vsce` to resolve paths outside the extension root. Fixed by using `--no-dependencies` flag in the package script (dependencies are already resolved at compile time via the symlink). Updated `.vscodeignore` to exclude common's node_modules/src/etc. VSIX now builds successfully at 39KB.
+- **Dynamic `require()` calls instead of static imports**: Accepted — added `findDevWorktree` and `getProjectRoot` to the static import from `smart-team-common`. Removed the local `getProjectRoot` wrapper function and both `require()` calls.
