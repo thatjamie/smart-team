@@ -1,30 +1,29 @@
-# Dev Notes — Step 5: Chat Handler
+# Dev Notes — Step 6: Extension Activation and Testing
 
 ## What was implemented
-- `handleChatRequest()` — main dispatcher for all chat commands
-- `/implement [step]` — full AI implementation flow: find plan → determine step → ensure worktree → build context → build system prompt → stream to AI → parse XML → apply files → write DEV_NOTES/DECISIONS → show diff
-- `/commit` — show diff in editor + inline preview → modal confirmation → commit via common gitWrite → update PROGRESS.md
-- `/feedback` — parse REVIEW_FEEDBACK.md → if APPROVED offer to mark step complete → if CHANGES_REQUIRED re-run implement flow
-- `/status` — formatted markdown table with plan name, branch, worktree, all step statuses, last action
-- Help text shown when no command is specified
+- Full `activate()` wiring in `src/extension.ts` replacing the stub
+- TreeView registration with `StepTreeProvider`
+- Chat participant registration with `handleChatRequest` and `context.secrets`
+- 7 palette commands: startStep, commitStep, addressFeedback, openWorktree, refresh, settings, setApiKey
+- File watchers for 5 shared state files (PLAN.md, PROGRESS.md, DEV_NOTES.md, DECISIONS.md, REVIEW_FEEDBACK.md)
+- Workspace folder change handler for sidebar refresh
+- SecretStorage API key management (setApiKey command with input dialog)
+- `deactivate()` cleaned up (context.subscriptions handles disposal)
 
 ## Files changed
-- `src/chatHandler.ts` — Chat handler with all four command handlers (468 lines)
+- `src/extension.ts` — Replaced stub with full activation wiring (25 → 205 lines)
 
 ## Decisions made
-- Diff shown both inline (truncated to 2000 chars) AND in a separate editor tab for full review
-- `/commit` uses modal confirmation dialog (showWarningMessage) — user must explicitly confirm
-- `/implement` with no arg finds current in-progress step, falls back to first pending
-- `/feedback` for CHANGES_REQUIRED delegates to the full implement flow (context builder picks up REVIEW_FEEDBACK.md automatically since iteration > 1)
-- PROGRESS.md is NOT modified during /implement — only during /commit
-- Error cases (no workspace, no plan, no worktree, AI parse failure, provider error) all show clear ❌ messages
+- API key prompt deferred until first AI call (via setApiKey command or ProviderFactory error)
+- Palette commands open chat with pre-filled `@smart-developer` commands for UX consistency
+- File watchers use `RelativePattern` with `**/` glob to catch files in subdirectories
+- Worktree command opens folder in new window via `vscode.openFolder`
+- Chat participant parameter renamed from `context` to `chatContext` to avoid shadowing extension context
 
 ## Questions for reviewer
 - None
 
 ## Verification
 - `npm run compile` produces zero errors
-- All imports resolve correctly from smart-team-common and local modules
-
-## Review feedback addressed (iteration 2)
-- **DEV_NOTES.md written with raw fs.writeFileSync instead of common writer**: Accepted — replaced with `writeDevNotes` from smart-team-common, using structured data from the parsed DevAction (summary → whatWasImplemented, fileChanges → filesChanged, decisions → decisions).
+- All imports resolve: StepTreeProvider, handleChatRequest, findPlanFile from common
+- Chat participant handler correctly receives `context.secrets` from outer scope

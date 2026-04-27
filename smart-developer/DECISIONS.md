@@ -79,3 +79,19 @@
   - **Context**: Addressing feedback is essentially re-implementing with added context
   - **Rationale**: The context builder already picks up REVIEW_FEEDBACK.md when iteration > 1, so re-running the full implement flow naturally includes feedback in the AI prompt. No special feedback-specific code needed.
   - **Date**: 2025-04-27
+
+## Step 6: Extension Activation and Testing
+- **Decision**: API key prompt deferred until first AI call
+  - **Context**: PLAN.md asks whether to prompt proactively or wait
+  - **Rationale**: Deferring avoids unnecessary prompts on startup. The setApiKey command and ProviderFactory error handling naturally guide users to enter keys when needed. Copilot doesn't need any key at all.
+  - **Date**: 2025-04-27
+
+- **Decision**: Palette commands open chat with pre-filled @smart-developer
+  - **Context**: Palette commands need to trigger the chat handler
+  - **Rationale**: Using `workbench.action.chat.open` with pre-filled text provides a seamless UX — users see the command in chat and can modify if needed before sending.
+  - **Date**: 2025-04-27
+
+- **Decision**: File watchers use RelativePattern with **/ glob
+  - **Context**: PLAN.md can be in subdirectories (e.g., monorepo)
+  - **Rationale**: `**/PLAN.md` catches files at any depth in the workspace, ensuring the sidebar stays current regardless of project structure.
+  - **Date**: 2025-04-27
