@@ -16,6 +16,16 @@ import { handleChatRequest } from './chatHandler';
  * @param context - The extension context provided by VSCode.
  */
 export function activate(context: vscode.ExtensionContext): void {
+    try {
+        activateInternal(context);
+    } catch (err) {
+        vscode.window.showErrorMessage(
+            `Smart Developer activation failed: ${err instanceof Error ? err.message : String(err)}`
+        );
+    }
+}
+
+function activateInternal(context: vscode.ExtensionContext): void {
 
     // ─── 1. Detect workspace ─────────────────────────────────────────────
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath;
@@ -28,17 +38,25 @@ export function activate(context: vscode.ExtensionContext): void {
     });
     context.subscriptions.push(treeView);
 
-    // ─── 3. Register chat participant ────────────────────────────────────
-    const chatParticipant = vscode.chat.createChatParticipant(
-        'smart-developer',
-        async (request, chatContext, stream) => {
-            await handleChatRequest(request, chatContext, stream, context.secrets);
+    // ─── 3. Register chat participant (guarded) ──────────────────────────
+    if (vscode.chat && typeof vscode.chat.createChatParticipant === 'function') {
+        try {
+            const chatParticipant = vscode.chat.createChatParticipant(
+                'smart-developer',
+                async (request, chatContext, stream) => {
+                    await handleChatRequest(request, chatContext, stream, context.secrets);
+                }
+            );
+            chatParticipant.iconPath = vscode.Uri.file(
+                path.join(context.extensionPath, 'media', 'icon.svg')
+            );
+            context.subscriptions.push(chatParticipant);
+        } catch (err) {
+            console.warn('Smart Developer: Chat participant registration failed.', err);
         }
-    );
-    chatParticipant.iconPath = vscode.Uri.file(
-        path.join(context.extensionPath, 'media', 'icon.svg')
-    );
-    context.subscriptions.push(chatParticipant);
+    } else {
+        console.warn('Smart Developer: vscode.chat API not available. Chat commands disabled.');
+    }
 
     // ─── 4. Register palette commands ────────────────────────────────────
 

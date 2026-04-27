@@ -149,16 +149,16 @@
   "scripts": {
     "compile": "tsc",
     "watch": "tsc -watch",
-    "package": "npx vsce package --no-dependencies --allow-missing-repository"
+    "package": "npx vsce package --allow-missing-repository"
   },
   "dependencies": {
-    "smart-team-common": "file:../smart-team-common",
     "@anthropic-ai/sdk": "^0.30.0",
-    "openai": "^4.52.0"
+    "openai": "^4.52.0",
+    "smart-team-common": "file:../smart-team-common/smart-team-common-0.1.0.tgz"
   },
   "devDependencies": {
-    "@types/vscode": "^1.90.0",
     "@types/node": "^20.14.0",
+    "@types/vscode": "^1.90.0",
     "typescript": "^5.5.0"
   }
 }

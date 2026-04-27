@@ -5,8 +5,3 @@ src/**
 tsconfig.json
 **/*.map
 **/*.tsbuildinfo
-node_modules/smart-team-common/**
-!node_modules/smart-team-common/out/**
-!node_modules/smart-team-common/package.json
-media/**
-!media/icon.svg
