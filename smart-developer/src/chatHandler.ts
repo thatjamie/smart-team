@@ -25,6 +25,7 @@ import {
     getLatestCommit,
     ProviderFactory,
     writeProgress,
+    writeDevNotes,
     updateProgressStep,
     updateLastAction,
     appendDecision,
@@ -186,10 +187,20 @@ async function handleImplement(
     }
     stream.markdown('\n');
 
-    // 9. Write DEV_NOTES.md
+    // 9. Write DEV_NOTES.md using common writer
     if (devAction.devNotesContent) {
         const devNotesPath = path.join(planRoot, 'DEV_NOTES.md');
-        fs.writeFileSync(devNotesPath, devAction.devNotesContent, 'utf-8');
+        writeDevNotes(
+            devNotesPath,
+            stepIndex + 1,
+            step.title,
+            {
+                whatWasImplemented: [devAction.summary],
+                filesChanged: devAction.fileChanges.map(f => `${f.filePath} — ${f.action}`),
+                decisions: devAction.decisions.map(d => d.decision),
+                questions: [],
+            }
+        );
         stream.markdown('📝 DEV_NOTES.md written.\n');
     }
 

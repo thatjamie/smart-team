@@ -9,7 +9,7 @@
 - Help text shown when no command is specified
 
 ## Files changed
-- `src/chatHandler.ts` — New file with all four command handlers (457 lines)
+- `src/chatHandler.ts` — Chat handler with all four command handlers (468 lines)
 
 ## Decisions made
 - Diff shown both inline (truncated to 2000 chars) AND in a separate editor tab for full review
@@ -25,3 +25,6 @@
 ## Verification
 - `npm run compile` produces zero errors
 - All imports resolve correctly from smart-team-common and local modules
+
+## Review feedback addressed (iteration 2)
+- **DEV_NOTES.md written with raw fs.writeFileSync instead of common writer**: Accepted — replaced with `writeDevNotes` from smart-team-common, using structured data from the parsed DevAction (summary → whatWasImplemented, fileChanges → filesChanged, decisions → decisions).

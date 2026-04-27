@@ -1,39 +1,44 @@
-# Review Feedback — Step 4: Sidebar TreeView
+# Review Feedback — Step 5: Chat Handler
 
 ## Summary
-Clean, well-structured implementation. The tree provider correctly uses shared parsers from smart-team-common, the layout matches the PLAN.md spec exactly, all items are clickable where appropriate, and "No plan found" is handled. Compiles cleanly, PROGRESS.md properly committed, working tree clean.
+Comprehensive implementation of all four chat commands. The flows match the PLAN.md spec closely, all shared modules from smart-team-common are used correctly, and error handling is thorough. A few issues to address before approval.
 
 ## ✅ Approved Items
-- **File location**: `src/providers/stepTreeProvider.ts` matches PLAN.md's "Files to Create".
-- **Layout matches PLAN.md spec exactly**:
-  - 📋 Plan info with name and branch
-  - 📍 Worktree info (active/not found)
-  - 📌 Current step with status, iteration, commit
-  - 📂 Dev Files header (expandable) → DEV_NOTES.md, DECISIONS.md, REVIEW_FEEDBACK.md
-  - 📂 All Steps header (expandable) → each step with status icon and commit hash
-- **Shared parser usage**: Correctly imports and uses `parsePlan`, `parseProgress`, `parseDevNotes`, `parseDecisions`, `parseReviewFeedback`, `findPlanFile`, `findDevWorktree`, `getProjectRoot` from smart-team-common.
-- **StepStatus enum**: Correctly uses `StepStatus.InProgress`, `StepStatus.Pending`, `StepStatus.Complete` from common (verified against enum values).
-- **Clickable items**: Plan info opens PLAN.md, dev file items open their respective files (only when file exists — good UX), step items open PLAN.md. Uses `vscode.open` command.
-- **Dev Files summaries**: DEV_NOTES.md shows file count and decision count, DECISIONS.md shows decision count, REVIEW_FEEDBACK.md shows issue count or approved status.
-- **"No plan found" handling**: Shows "No PLAN.md found in workspace" when `findPlanFile` returns undefined. Also handles "No workspace folder open".
-- **Current step detection**: Prefers in-progress step, falls back to first pending — matches DECISIONS.md rationale.
-- **`refresh()` method**: Fires `_onDidChangeTreeData` event, ready for file watcher integration (deferred to Step 6 per DEV_NOTES.md).
-- **DevTreeItem class**: Clean design with discriminated `type` field, optional command/resourceUri/tooltip/iconPath.
-- **JSDoc**: Properly documented class and methods.
-- **Compilation**: `npm run compile` passes with zero errors.
-- **DECISIONS.md**: 3 well-documented decisions (two-level hierarchy, current step preference, file-exists check).
-- **PROGRESS.md**: Properly committed at HEAD with correct iteration 1/5 and commit hash.
-- **Working tree**: Clean — no uncommitted changes.
+- **File location**: `src/chatHandler.ts` matches PLAN.md's "Files to Create".
+- **All 4 commands implemented**: `/implement`, `/commit`, `/feedback`, `/status`, plus default help text.
+- **`/implement` flow** (lines 81-221): Matches PLAN.md step-by-step:
+  1. Find plan ✅
+  2. Determine step (arg or auto-detect) ✅
+  3. Ensure worktree via `createDevWorktree` ✅
+  4. Build dev context (Step 3 module) ✅
+  5. Build system prompt (Step 2 module) ✅
+  6. Stream to AI via `ProviderFactory.create().stream()` ✅
+  7. Parse response → apply file changes ✅
+  8. Write DEV_NOTES.md (fs.writeFileSync) ✅
+  9. Append decisions to DECISIONS.md via `appendDecision` ✅
+  10. Show diff (inline truncated + editor tab) ✅
+- **`/commit` flow** (lines 225-313): Shows diff → modal confirmation → `commitChanges` → `updateProgressStep` + `updateLastAction` + `writeProgress`. Commit message format: `feat(<plan>): step N - <title>` ✅
+- **`/feedback` flow** (lines 317-390): Parses REVIEW_FEEDBACK.md → if APPROVED offers "Mark Complete" → if CHANGES_REQUIRED delegates to `/implement` ✅
+- **`/status` flow** (lines 394-438): Shows plan name, branch, worktree, formatted markdown table with step statuses, last action ✅
+- **Error handling**: All flows handle no-workspace, no-plan, no-worktree, AI parse failure, provider error with clear ❌ messages ✅
+- **PROGRESS.md not modified during `/implement`**: Only modified during `/commit` ✅
+- **Shared module usage**: Correctly imports `parsePlan`, `parseProgress`, `parseReviewFeedback`, `findPlanFile`, `findDevWorktree`, `getProjectRoot`, `createDevWorktree`, `commitChanges`, `getDiffForStep`, `openDiffEditor`, `getLatestCommit`, `ProviderFactory`, `writeProgress`, `updateProgressStep`, `updateLastAction`, `appendDecision`, `StepStatus` — all verified against common exports.
+- **Step auto-detection**: In-progress step first, then first pending — consistent with Step 4 tree provider ✅
+- **Modal confirmation for commit**: `showWarningMessage` with `{ modal: true }` ✅
+- **Compilation**: `npm run compile` passes with zero errors ✅
+- **DECISIONS.md**: 3 well-documented decisions (diff display, modal commit, feedback delegation) ✅
+- **PROGRESS.md**: Properly committed at HEAD with correct iteration 1/5 ✅
+- **Working tree**: Clean ✅
 
 ## ❌ Changes Required
 
-None.
+- [ ] **`/implement` writes DEV_NOTES.md directly instead of using common writer** (`chatHandler.ts:192`): `fs.writeFileSync(devNotesPath, devAction.devNotesContent, 'utf-8')` bypasses the shared `writeDevNotes` writer from smart-team-common. PLAN.md says "Write DEV_NOTES.md and DECISIONS.md (using common writers)". The `writeDevNotes` function is exported from common and should be used for consistency. **Fix: Import `writeDevNotes` from smart-team-common and use it instead of `fs.writeFileSync`.**
 
 ## 💡 Suggestions (Optional)
 
-- The `findPlanFile` call uses a hardcoded depth of 3 (`findPlanFile(this.workspaceRoot, 3)`). Consider using the `smart-developer.planSearchMaxDepth` setting from `package.json` instead, so users can configure it.
-- Consider adding `contextValue` to `DevTreeItem` for future context menu support (right-click actions on steps/files).
-- The `parsePlan` call at line 310 passes `progress` as a second argument — this is good since it merges status into steps. Just noting this is correct usage.
+- The `findPlanFile` depth is hardcoded to 3 in multiple places. Consider extracting a helper to read the `smart-developer.planSearchMaxDepth` setting.
+- Consider adding progress reporting during the AI streaming phase (e.g., elapsed time or token count).
+- The `/feedback` APPROVED path offers to mark step complete, but this should ideally be done by the reviewer, not the dev-agent. Consider whether this could cause conflicts if the reviewer also marks the step complete.
 
 ## ❓ Questions
 
@@ -41,4 +46,4 @@ None.
 
 ## Iteration
 - Iteration: 1/5
-- Status: APPROVED
+- Status: CHANGES_REQUIRED
