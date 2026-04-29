@@ -139,6 +139,23 @@ async function handleImplement(
         return;
     }
 
+    // 3b. Resolve plan root inside the worktree
+    // The worktree has its own copy of the repo, so plan files live there.
+    const rel = path.relative(projectRoot, planRoot);
+    const worktreePlanRoot = rel ? path.join(worktreeInfo.path, rel) : worktreeInfo.path;
+
+    // 3c. Sync plan files from workspace to worktree if missing
+    // (needed when the main repo has no commits yet — worktree won't have these files)
+    const planFilesToSync = ['PLAN.md', 'PROGRESS.md'];
+    for (const fileName of planFilesToSync) {
+        const srcPath = path.join(planRoot, fileName);
+        const dstPath = path.join(worktreePlanRoot, fileName);
+        if (fs.existsSync(srcPath) && !fs.existsSync(dstPath)) {
+            fs.mkdirSync(path.dirname(dstPath), { recursive: true });
+            fs.copyFileSync(srcPath, dstPath);
+        }
+    }
+
     // 4. Build context
     const devContext = buildDevContext(planRoot, stepIndex, plan, progress, worktreeInfo.path);
 
@@ -189,7 +206,7 @@ async function handleImplement(
 
     // 9. Write DEV_NOTES.md using common writer
     if (devAction.devNotesContent) {
-        const devNotesPath = path.join(planRoot, 'DEV_NOTES.md');
+        const devNotesPath = path.join(worktreePlanRoot, 'DEV_NOTES.md');
         writeDevNotes(
             devNotesPath,
             stepIndex + 1,
@@ -206,7 +223,7 @@ async function handleImplement(
 
     // 10. Write decisions to DECISIONS.md
     if (devAction.decisions.length > 0) {
-        const decisionsPath = path.join(planRoot, 'DECISIONS.md');
+        const decisionsPath = path.join(worktreePlanRoot, 'DECISIONS.md');
         const stepLabel = `Step ${stepIndex + 1}: ${step.title}`;
         for (const d of devAction.decisions) {
             appendDecision(decisionsPath, stepLabel, {
@@ -219,9 +236,27 @@ async function handleImplement(
         stream.markdown(`📋 ${devAction.decisions.length} decision(s) appended to DECISIONS.md.\n`);
     }
 
-    // 11. Show diff
+    // 11. Update PROGRESS.md to mark step as in-progress
     const iteration = progress?.steps[stepIndex]?.iteration ?? 0;
-    const diff = getDiffForStep(worktreeInfo.path, iteration + 1);
+    const newIteration = iteration + 1;
+    if (progress) {
+        let updated = updateProgressStep(progress, stepIndex, {
+            status: StepStatus.InProgress,
+            iteration: newIteration,
+            lastCommit: progress.steps[stepIndex]?.lastCommit ?? '',
+        });
+        updated = updateLastAction(
+            updated,
+            'dev-agent',
+            `Implemented Step ${stepIndex + 1}, iteration ${newIteration} (awaiting commit)`,
+            new Date().toISOString().replace('T', ' ').substring(0, 16)
+        );
+        writeProgress(path.join(worktreePlanRoot, 'PROGRESS.md'), updated);
+        stream.markdown('📋 PROGRESS.md updated — step marked as in-progress.\n');
+    }
+
+    // 12. Show diff
+    const diff = getDiffForStep(worktreeInfo.path, newIteration);
     if (diff) {
         stream.markdown('\n📊 **Diff preview:**\n```\n' + diff.substring(0, 2000) + (diff.length > 2000 ? '\n... (truncated)' : '') + '\n```\n\n');
         stream.markdown('💡 Full diff opened in editor tab.\n');
@@ -250,8 +285,6 @@ async function handleCommit(
     }
 
     const planRoot = path.dirname(planFilePath);
-    const progress = parseProgress(path.join(planRoot, 'PROGRESS.md'));
-    const plan = parsePlan(planFilePath, progress);
     const projectRoot = getProjectRoot(workspaceRoot);
     if (!projectRoot) {
         stream.markdown('❌ Not inside a git repository.');
@@ -264,6 +297,12 @@ async function handleCommit(
         return;
     }
 
+    // Resolve plan root inside the worktree and read state from there
+    const rel = path.relative(projectRoot, planRoot);
+    const worktreePlanRoot = rel ? path.join(worktreeInfo.path, rel) : worktreeInfo.path;
+    const progress = parseProgress(path.join(worktreePlanRoot, 'PROGRESS.md'));
+    const plan = parsePlan(planFilePath, progress);
+
     // Find current step
     const currentIdx = plan.steps.findIndex(s => s.status === StepStatus.InProgress);
     if (currentIdx < 0) {
@@ -272,7 +311,7 @@ async function handleCommit(
     }
 
     const step = plan.steps[currentIdx];
-    const iteration = (progress?.steps[currentIdx]?.iteration ?? 0) + 1;
+    const iteration = progress?.steps[currentIdx]?.iteration ?? 1;
 
     // Show diff
     const diff = getDiffForStep(worktreeInfo.path, iteration);
@@ -316,7 +355,7 @@ async function handleCommit(
             `Committed Step ${currentIdx + 1}, iteration ${iteration}`,
             new Date().toISOString().replace('T', ' ').substring(0, 16)
         );
-        writeProgress(path.join(planRoot, 'PROGRESS.md'), updated);
+        writeProgress(path.join(worktreePlanRoot, 'PROGRESS.md'), updated);
         stream.markdown('📋 PROGRESS.md updated.\n');
     }
 
@@ -343,7 +382,16 @@ async function handleFeedback(
     }
 
     const planRoot = path.dirname(planFilePath);
-    const feedbackPath = path.join(planRoot, 'REVIEW_FEEDBACK.md');
+    const projectRoot = getProjectRoot(workspaceRoot);
+    const worktreeInfo = projectRoot ? findDevWorktree(projectRoot) : undefined;
+
+    // Resolve plan root inside the worktree (or fall back to workspace plan root)
+    const rel = projectRoot ? path.relative(projectRoot, planRoot) : '';
+    const worktreePlanRoot = worktreeInfo?.exists
+        ? (rel ? path.join(worktreeInfo.path, rel) : worktreeInfo.path)
+        : planRoot;
+
+    const feedbackPath = path.join(worktreePlanRoot, 'REVIEW_FEEDBACK.md');
 
     if (!fs.existsSync(feedbackPath)) {
         stream.markdown('❌ No REVIEW_FEEDBACK.md found. Has the reviewer provided feedback?');
@@ -370,7 +418,7 @@ async function handleFeedback(
         );
 
         if (markComplete === 'Mark Complete') {
-            const progress = parseProgress(path.join(planRoot, 'PROGRESS.md'));
+            const progress = parseProgress(path.join(worktreePlanRoot, 'PROGRESS.md'));
             if (progress) {
                 let updated = updateProgressStep(progress, feedback.stepIndex, {
                     status: StepStatus.Complete,
@@ -381,7 +429,7 @@ async function handleFeedback(
                     `Marked Step ${feedback.stepIndex + 1} as Complete (review approved)`,
                     new Date().toISOString().replace('T', ' ').substring(0, 16)
                 );
-                writeProgress(path.join(planRoot, 'PROGRESS.md'), updated);
+                writeProgress(path.join(worktreePlanRoot, 'PROGRESS.md'), updated);
                 stream.markdown('✅ PROGRESS.md updated — step marked as Complete.');
             }
         }
