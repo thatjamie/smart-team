@@ -18,9 +18,11 @@ import {
     findPlanFile,
     findDevWorktree,
     getProjectRoot,
+    getProjectName,
     createDevWorktree,
     commitChanges,
-    getDiffForStep,
+    execGit,
+    hasUncommittedChanges,
     openDiffEditor,
     getLatestCommit,
     ProviderFactory,
@@ -31,7 +33,7 @@ import {
     appendDecision,
     StepStatus,
 } from 'smart-team-common';
-import type { Plan, Progress, AiMessage } from 'smart-team-common';
+import type { Plan, Progress, WorktreeInfo, AiMessage } from 'smart-team-common';
 import { buildDevSystemPrompt } from './prompts/devSystemPrompt';
 import { buildDevContext } from './contextBuilder';
 import { parseDevResponse, applyFileChanges } from './fileApplier';
@@ -126,17 +128,31 @@ async function handleImplement(
     const step = plan.steps[stepIndex];
     stream.markdown(`🔄 Implementing **Step ${stepIndex + 1}: ${step.title}**...\n\n`);
 
-    // 3. Ensure worktree exists
+    // 3. Resolve or create the dev worktree
     const projectRoot = getProjectRoot(workspaceRoot);
     if (!projectRoot) {
         stream.markdown('❌ Not inside a git repository.');
         return;
     }
 
-    const worktreeInfo = createDevWorktree(projectRoot, plan.name);
-    if (!worktreeInfo.exists) {
-        stream.markdown('❌ Failed to create dev worktree.');
-        return;
+    // Detect if we're already in the dev worktree
+    const projectName = getProjectName(projectRoot);
+    let worktreeInfo: WorktreeInfo;
+    if (projectName.endsWith('-dev')) {
+        // Already in the dev worktree — use it directly
+        try {
+            const branch = execGit(projectRoot, ['branch', '--show-current']);
+            worktreeInfo = { path: projectRoot, branch, exists: true };
+        } catch {
+            worktreeInfo = { path: projectRoot, branch: '', exists: true };
+        }
+    } else {
+        // In the main worktree — create or find the dev worktree
+        worktreeInfo = createDevWorktree(projectRoot, plan.name);
+        if (!worktreeInfo.exists) {
+            stream.markdown('❌ Failed to create dev worktree.');
+            return;
+        }
     }
 
     // 3b. Resolve plan root inside the worktree
@@ -255,8 +271,8 @@ async function handleImplement(
         stream.markdown('📋 PROGRESS.md updated — step marked as in-progress.\n');
     }
 
-    // 12. Show diff
-    const diff = getDiffForStep(worktreeInfo.path, newIteration);
+    // 12. Show diff (use staged diff — files were written via fs.writeFileSync, not committed)
+    const diff = getStagedDiff(worktreeInfo.path);
     if (diff) {
         stream.markdown('\n📊 **Diff preview:**\n```\n' + diff.substring(0, 2000) + (diff.length > 2000 ? '\n... (truncated)' : '') + '\n```\n\n');
         stream.markdown('💡 Full diff opened in editor tab.\n');
@@ -285,17 +301,14 @@ async function handleCommit(
     }
 
     const planRoot = path.dirname(planFilePath);
-    const projectRoot = getProjectRoot(workspaceRoot);
-    if (!projectRoot) {
-        stream.markdown('❌ Not inside a git repository.');
-        return;
-    }
 
-    const worktreeInfo = findDevWorktree(projectRoot);
-    if (!worktreeInfo?.exists) {
-        stream.markdown('❌ No dev worktree found.');
+    // Resolve dev worktree (works from either main or dev worktree)
+    const resolved = resolveDevWorktree(workspaceRoot);
+    if (!resolved) {
+        stream.markdown('❌ Could not find or access the dev worktree.');
         return;
     }
+    const { worktreeInfo, projectRoot } = resolved;
 
     // Resolve plan root inside the worktree and read state from there
     const rel = path.relative(projectRoot, planRoot);
@@ -313,8 +326,14 @@ async function handleCommit(
     const step = plan.steps[currentIdx];
     const iteration = progress?.steps[currentIdx]?.iteration ?? 1;
 
-    // Show diff
-    const diff = getDiffForStep(worktreeInfo.path, iteration);
+    // Check for uncommitted changes first
+    if (!hasUncommittedChanges(worktreeInfo.path)) {
+        stream.markdown('❌ No uncommitted changes found in the dev worktree.');
+        return;
+    }
+
+    // Stage all changes and show the staged diff
+    const diff = getStagedDiff(worktreeInfo.path);
     if (!diff) {
         stream.markdown('❌ No changes to commit.');
         return;
@@ -382,13 +401,14 @@ async function handleFeedback(
     }
 
     const planRoot = path.dirname(planFilePath);
-    const projectRoot = getProjectRoot(workspaceRoot);
-    const worktreeInfo = projectRoot ? findDevWorktree(projectRoot) : undefined;
 
-    // Resolve plan root inside the worktree (or fall back to workspace plan root)
-    const rel = projectRoot ? path.relative(projectRoot, planRoot) : '';
-    const worktreePlanRoot = worktreeInfo?.exists
-        ? (rel ? path.join(worktreeInfo.path, rel) : worktreeInfo.path)
+    // Resolve dev worktree (works from either main or dev worktree)
+    const resolved = resolveDevWorktree(workspaceRoot);
+    const worktreePlanRoot = resolved
+        ? (() => {
+            const rel = path.relative(resolved.projectRoot, planRoot);
+            return rel ? path.join(resolved.worktreeInfo.path, rel) : resolved.worktreeInfo.path;
+        })()
         : planRoot;
 
     const feedbackPath = path.join(worktreePlanRoot, 'REVIEW_FEEDBACK.md');
@@ -469,13 +489,12 @@ async function handleStatus(
     const planRoot = path.dirname(planFilePath);
     const progress = parseProgress(path.join(planRoot, 'PROGRESS.md'));
     const plan = parsePlan(planFilePath, progress);
-    const projectRoot = getProjectRoot(workspaceRoot);
-    const worktreeInfo = projectRoot ? findDevWorktree(projectRoot) : undefined;
+    const resolved = resolveDevWorktree(workspaceRoot);
 
     // Header
     stream.markdown(`## 📋 Plan: **${plan.name}**\n\n`);
     stream.markdown(`- **Branch:** ${progress?.branch ?? 'unknown'}\n`);
-    stream.markdown(`- **Worktree:** ${worktreeInfo?.exists ? `\`${worktreeInfo.path}\`` : 'none'}\n`);
+    stream.markdown(`- **Worktree:** ${resolved?.worktreeInfo?.exists ? `\`${resolved.worktreeInfo.path}\`` : 'none'}\n`);
     stream.markdown(`- **Steps:** ${plan.steps.length}\n\n`);
 
     // Step table
@@ -498,6 +517,67 @@ async function handleStatus(
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * Resolve the dev worktree regardless of which worktree VSCode is opened in.
+ *
+ * Handles two scenarios:
+ * 1. VSCode opened in **main worktree** → `findDevWorktree()` works normally
+ * 2. VSCode opened in **dev worktree** → detect via `-dev` suffix, use it directly
+ *
+ * @param workspaceRoot - The VSCode workspace root path.
+ * @returns `{ worktreeInfo, projectRoot }` where `worktreeInfo` points to the dev
+ *          worktree and `projectRoot` is the main repo root, or `undefined` on failure.
+ */
+function resolveDevWorktree(workspaceRoot: string): {
+    worktreeInfo: WorktreeInfo;
+    projectRoot: string;
+} | undefined {
+    const projectRoot = getProjectRoot(workspaceRoot);
+    if (!projectRoot) {
+        return undefined;
+    }
+
+    // Check if we're already inside the dev worktree (name ends with -dev)
+    const projectName = getProjectName(projectRoot);
+    if (projectName.endsWith('-dev')) {
+        // We ARE the dev worktree — return self
+        try {
+            const branch = execGit(projectRoot, ['branch', '--show-current']);
+            return { worktreeInfo: { path: projectRoot, branch, exists: true }, projectRoot };
+        } catch {
+            return { worktreeInfo: { path: projectRoot, branch: '', exists: true }, projectRoot };
+        }
+    }
+
+    // Normal case: we're in the main worktree, find the dev worktree
+    const worktreeInfo = findDevWorktree(projectRoot);
+    if (!worktreeInfo?.exists) {
+        return undefined;
+    }
+    return { worktreeInfo, projectRoot };
+}
+
+/**
+ * Get a diff that captures uncommitted (working directory) changes.
+ *
+ * Stages all changes with `git add -A`, then returns `git diff --cached`.
+ * This is the correct diff to use after `/implement` writes files via
+ * `fs.writeFileSync` (no commits yet).
+ *
+ * @param worktreeDir - Absolute path to the worktree directory.
+ * @returns The staged diff string, or empty string if nothing to show.
+ */
+function getStagedDiff(worktreeDir: string): string {
+    try {
+        // Stage everything so new files appear in the diff
+        execGit(worktreeDir, ['add', '-A']);
+        const diff = execGit(worktreeDir, ['diff', '--cached']);
+        return diff;
+    } catch {
+        return '';
+    }
+}
 
 function getWorkspaceRoot(): string | undefined {
     const folders = vscode.workspace.workspaceFolders;

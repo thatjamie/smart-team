@@ -130,22 +130,35 @@ function extractBulletItems(content: string, headingRegex: RegExp): string[] {
  * - `- None.`
  */
 function parseChangesRequired(content: string): ChangesRequiredItem[] {
-    const sectionContent = extractSectionContent(content, /##\s*❌\s*Changes Required/);
-    if (!sectionContent || sectionContent.trim() === '- None.') {
+    const rawSectionContent = extractSectionContent(content, /##\s*❌\s*Changes Required/);
+    if (!rawSectionContent || rawSectionContent.trim() === '- None.') {
         return [];
     }
+    // Trim leading/trailing whitespace so the ^ anchor in itemRegex matches
+    // the first bullet line correctly (section extraction often includes a leading newline).
+    const sectionContent = rawSectionContent.trim();
 
     const items: ChangesRequiredItem[] = [];
-    // Match bullet items, possibly spanning multiple lines until the next bullet or end
-    const itemRegex = /^- \[[ x]\]\s+\*\*(.+?)\*\*:\s*([\s\S]*?)(?=^- \[|$(?!\\n))/gm;
+    // Split section into individual checkbox items. Each starts with "- [ ]" or "- [x]".
+    // The colon after **title** is optional — some reviewers put the title on its own line
+    // followed by indented sub-bullets (What/Why/How) on subsequent lines.
+    const itemBlocks = sectionContent.split(/(?=^- \[[ x]\])/m).filter(b => /^- \[[ x]\]/.test(b));
 
-    let match: RegExpExecArray | null;
-    while ((match = itemRegex.exec(sectionContent)) !== null) {
-        items.push({
-            description: match[1].trim(),
-            howToFix: match[2].trim(),
-            resolved: match[0].includes('[x]'),
-        });
+    for (const block of itemBlocks) {
+        // First line: "- [ ] **Title**: optional description"  OR  "- [ ] **Title**\n  details..."
+        const firstLine = block.split('\n')[0] ?? '';
+        const titleMatch = firstLine.match(/^- \[[ x]\]\s+\*\*(.+?)\*\*:?\s*(.*)/);
+        if (!titleMatch) {
+            continue;
+        }
+        const description = titleMatch[1].trim();
+        // Remaining content: everything after the first line + any inline text after **
+        const remaining = block.substring(firstLine.length).trim();
+        const inlineText = titleMatch[2]?.trim() ?? '';
+        const howToFix = (inlineText + (inlineText && remaining ? '\n' : '') + remaining).trim();
+        const resolved = block.includes('[x]');
+
+        items.push({ description, howToFix, resolved });
     }
 
     return items;

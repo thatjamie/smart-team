@@ -7,7 +7,8 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { findPlanFile, findDevWorktree, getProjectRoot } from 'smart-team-common';
+import { findPlanFile, findDevWorktree, getProjectRoot, getProjectName, execGit } from 'smart-team-common';
+import type { WorktreeInfo } from 'smart-team-common';
 import { StepTreeProvider } from './providers/stepTreeProvider';
 import { handleChatRequest } from './chatHandler';
 
@@ -106,6 +107,14 @@ function activateInternal(context: vscode.ExtensionContext): void {
                 vscode.window.showWarningMessage('Not inside a git repository.');
                 return;
             }
+
+            // Detect if already in the dev worktree
+            const projectName = getProjectName(projectRoot);
+            if (projectName.endsWith('-dev')) {
+                vscode.window.showInformationMessage('Already in the dev worktree.');
+                return;
+            }
+
             const worktreeInfo = findDevWorktree(projectRoot);
             if (worktreeInfo?.exists) {
                 await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(worktreeInfo.path), true);
